@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SATS — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; display: flex; background: #f0f4ff; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 240px; flex-shrink: 0;
+  background: linear-gradient(160deg, #0f0c29, #1a1060, #24243e);
+  display: flex; flex-direction: column;
+  padding: 1.5rem 1rem; position: relative; overflow: hidden;
+}
+.orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.25; }
+.orb1 { width: 250px; height: 250px; background: #6366f1; top: -80px; right: -80px; }
+.orb2 { width: 200px; height: 200px; background: #8b5cf6; bottom: -60px; left: -60px; }
+.grid-bg {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+.sidebar-inner { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; }
+
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0.5rem; }
+.brand-icon {
+  width: 38px; height: 38px; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 17px; box-shadow: 0 6px 18px rgba(99,102,241,0.5);
+}
+.brand-name { font-size: 1.1rem; font-weight: 800; color: white; letter-spacing: -0.02em; }
+.brand-tag { font-size: 0.6rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.1em; }
+
+.nav-section { font-size: 0.6rem; font-weight: 700; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.12em; padding: 0 0.5rem; margin: 1rem 0 0.4rem; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 0.6rem 0.75rem; border-radius: 10px;
+  cursor: pointer; transition: all 0.2s;
+  font-size: 0.82rem; font-weight: 600;
+  color: rgba(255,255,255,0.45); margin-bottom: 2px;
+}
+.nav-item:hover { background: rgba(255,255,255,0.07); color: white; }
+.nav-item.active { background: rgba(99,102,241,0.25); color: white; border-left: 3px solid #6366f1; }
+.nav-icon { font-size: 0.95rem; width: 18px; text-align: center; }
+
+.nav-badge {
+  margin-left: auto; background: rgba(239,68,68,0.3); color: #fca5a5;
+  font-size: 0.6rem; font-weight: 800; padding: 1px 6px; border-radius: 8px;
+}
+
+.sidebar-bottom { margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); }
+.user-card {
+  display: flex; align-items: center; gap: 9px; padding: 0.6rem 0.5rem;
+  border-radius: 10px; background: rgba(255,255,255,0.05); margin-bottom: 0.6rem;
+}
+.user-av {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.82rem; font-weight: 800; color: white; flex-shrink: 0;
+}
+.user-name { font-size: 0.8rem; font-weight: 700; color: white; }
+.user-role { font-size: 0.62rem; color: rgba(255,255,255,0.35); }
+.logout-btn {
+  width: 100%; padding: 0.55rem; background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2); border-radius: 9px;
+  color: #fca5a5; font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.2s;
+}
+.logout-btn:hover { background: rgba(239,68,68,0.2); }
+
+/* ── MAIN ── */
+.main { flex: 1; background: white; position: relative; overflow-y: auto; }
+.main::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, rgba(99,102,241,0.04) 1px, transparent 0);
+  background-size: 24px 24px; pointer-events: none;
+}
+.main-inner { position: relative; z-index: 1; padding: 2rem 2.5rem; }
+
+.page-header { margin-bottom: 2rem; }
+.page-title { font-size: 1.6rem; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; }
+.page-sub { font-size: 0.85rem; color: #94a3b8; margin-top: 0.2rem; }
+
+.section { display: none; animation: fadeUp 0.3s ease; }
+.section.active { display: block; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+.stat-card {
+  background: #fafafa; border: 1.5px solid #f1f5f9; border-radius: 16px; padding: 1.25rem;
+  transition: all 0.2s;
+}
+.stat-card:hover { border-color: #e0e7ff; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.08); }
+.stat-icon { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-bottom: 0.75rem; }
+.stat-icon.purple { background: #ede9fe; }
+.stat-icon.amber { background: #fef3c7; }
+.stat-icon.green { background: #d1fae5; }
+.stat-icon.blue { background: #dbeafe; }
+.stat-value { font-size: 1.9rem; font-weight: 900; color: #0f172a; letter-spacing: -0.04em; }
+.stat-label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-top: 0.2rem; }
+
+/* User rows */
+.user-row {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem 1.25rem; background: #fafafa;
+  border: 1.5px solid #f1f5f9; border-radius: 14px;
+  margin-bottom: 0.6rem; transition: all 0.2s;
+}
+.user-row:hover { border-color: #e0e7ff; background: white; box-shadow: 0 4px 12px rgba(99,102,241,0.06); }
+.ur-avatar {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; font-weight: 800; flex-shrink: 0; color: white;
+}
+.ur-name { font-size: 0.9rem; font-weight: 700; color: #0f172a; }
+.ur-email { font-size: 0.75rem; color: #94a3b8; margin-top: 1px; }
+.ur-right { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; flex-shrink: 0; }
+
+.badge {
+  padding: 0.22rem 0.7rem; border-radius: 20px;
+  font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.badge-student { background: #ede9fe; color: #6d28d9; }
+.badge-teacher { background: #d1fae5; color: #065f46; }
+.badge-mentor { background: #fef3c7; color: #92400e; }
+.badge-admin { background: #fee2e2; color: #991b1b; }
+.badge-active { background: #d1fae5; color: #065f46; }
+.badge-pending { background: #fef3c7; color: #92400e; }
+
+.btn { padding: 0.42rem 0.9rem; border: none; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.2s; }
+.btn-approve { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+.btn-approve:hover { background: #a7f3d0; }
+.btn-delete { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.btn-delete:hover { background: #fecaca; }
+.btn-primary {
+  padding: 0.7rem 1.4rem; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white; border: none; border-radius: 11px; font-size: 0.875rem; font-weight: 800;
+  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+  box-shadow: 0 6px 16px rgba(99,102,241,0.35); transition: all 0.2s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(99,102,241,0.45); }
+
+.section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.section-title { font-size: 0.95rem; font-weight: 800; color: #0f172a; }
+.section-count { background: #f1f5f9; border-radius: 20px; padding: 0.2rem 0.75rem; font-size: 0.72rem; color: #64748b; font-weight: 700; }
+
+.empty-state { text-align: center; padding: 3rem 2rem; color: #94a3b8; }
+.empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.empty-title { font-size: 0.95rem; font-weight: 700; color: #475569; margin-bottom: 0.3rem; }
+
+/* Assign */
+.assign-card { background: #fafafa; border: 1.5px solid #f1f5f9; border-radius: 16px; padding: 1.75rem; }
+.assign-row { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
+.assign-group { flex: 1; min-width: 180px; }
+.assign-label { font-size: 0.75rem; font-weight: 700; color: #475569; margin-bottom: 6px; display: block; }
+select {
+  width: 100%; padding: 0.7rem 1rem; border: 1.5px solid #e2e8f0;
+  border-radius: 11px; font-size: 0.875rem; color: #0f172a; outline: none;
+  font-family: 'Plus Jakarta Sans', sans-serif; background: white; transition: all 0.2s;
+}
+select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.assign-msg { margin-top: 1rem; font-size: 0.875rem; font-weight: 700; color: #059669; display: none; }
+.assign-msg.show { display: block; animation: fadeUp 0.3s ease; }
+
+/* Skeleton */
+.skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 14px; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* Toast */
+.toast-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999; display: flex; flex-direction: column; gap: 0.5rem; }
+.toast {
+  padding: 0.85rem 1.25rem; border-radius: 12px; font-size: 0.85rem; font-weight: 700;
+  display: flex; align-items: center; gap: 0.6rem; min-width: 260px;
+  animation: toastIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+.toast.success { background: #f0fdf4; border: 1.5px solid #bbf7d0; color: #15803d; }
+.toast.error { background: #fef2f2; border: 1.5px solid #fecaca; color: #dc2626; }
+</style>
+</head>
+<body>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="grid-bg"></div>
+  <div class="sidebar-inner">
+    <div class="brand">
+      <div class="brand-icon">📋</div>
+      <div>
+        <div class="brand-name">SATS</div>
+        <div class="brand-tag">Admin Panel</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Management</div>
+    <div class="nav-item active" onclick="showSection('pending',this)">
+      <span class="nav-icon">⏳</span> Pending Approvals
+      <span class="nav-badge" id="pending-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showSection('users',this)">
+      <span class="nav-icon">👥</span> All Users
+    </div>
+    <div class="nav-item" onclick="showSection('assign',this)">
+      <span class="nav-icon">🔗</span> Assign Mentor
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-av" id="user-av">A</div>
+        <div>
+          <div class="user-name" id="admin-name">Admin</div>
+          <div class="user-role">Administrator</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">↩ Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="main-inner">
+
+    <!-- Pending -->
+    <div class="section active" id="pending">
+      <div class="page-header">
+        <div class="page-title">Pending Approvals</div>
+        <div class="page-sub">Review and approve new user registrations</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon purple">👥</div>
+          <div class="stat-value" id="s-total">—</div>
+          <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon amber">⏳</div>
+          <div class="stat-value" id="s-pending">—</div>
+          <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">✅</div>
+          <div class="stat-value" id="s-approved">—</div>
+          <div class="stat-label">Approved</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">🎓</div>
+          <div class="stat-value" id="s-students">—</div>
+          <div class="stat-label">Students</div>
+        </div>
+      </div>
+      <div class="section-head">
+        <div class="section-title">Awaiting Approval</div>
+      </div>
+      <div id="pending-list">
+        <div class="skeleton" style="height:68px;margin-bottom:0.6rem;"></div>
+        <div class="skeleton" style="height:68px;"></div>
+      </div>
+    </div>
+
+    <!-- Users -->
+    <div class="section" id="users">
+      <div class="page-header">
+        <div class="page-title">All Users</div>
+        <div class="page-sub">Manage everyone registered in the system</div>
+      </div>
+      <div class="section-head">
+        <div class="section-title">Registered Users</div>
+        <span class="section-count" id="users-count">Loading...</span>
+      </div>
+      <div id="users-list">
+        <div class="skeleton" style="height:68px;margin-bottom:0.6rem;"></div>
+        <div class="skeleton" style="height:68px;"></div>
+      </div>
+    </div>
+
+    <!-- Assign -->
+    <div class="section" id="assign">
+      <div class="page-header">
+        <div class="page-title">Assign Mentor</div>
+        <div class="page-sub">Link a mentor to a student for guidance</div>
+      </div>
+      <div class="assign-card">
+        <div class="assign-row">
+          <div class="assign-group">
+            <span class="assign-label">Student</span>
+            <select id="student-select"><option>Loading...</option></select>
+          </div>
+          <div class="assign-group">
+            <span class="assign-label">Mentor</span>
+            <select id="mentor-select"><option>Loading...</option></select>
+          </div>
+          <button class="btn-primary" onclick="assignMentor()">Assign →</button>
+        </div>
+        <div class="assign-msg" id="assign-msg">✅ Mentor assigned successfully!</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:5000/api';
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const name = localStorage.getItem('name');
+  if (!token || role !== 'admin') window.location.href = 'index.html';
+  document.getElementById('admin-name').textContent = name || 'Admin';
+  document.getElementById('user-av').textContent = name ? name[0].toUpperCase() : 'A';
+  const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+  function toast(msg, type='success') {
+    const tc = document.getElementById('toasts');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span>${type==='success'?'✅':'❌'}</span>${msg}`;
+    tc.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  function showSection(sec, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(sec).classList.add('active');
+    el.classList.add('active');
+    if (sec==='pending') { loadPending(); loadStats(); }
+    if (sec==='users') loadUsers();
+    if (sec==='assign') loadAssign();
+  }
+
+  function roleColor(r) {
+    return {student:'#6366f1',teacher:'#10b981',mentor:'#f59e0b',admin:'#ef4444'}[r]||'#6366f1';
+  }
+
+  function userRow(u, showApprove=false) {
+    const rc = roleColor(u.role);
+    return `<div class="user-row">
+      <div class="ur-avatar" style="background:${rc}">${u.name[0].toUpperCase()}</div>
+      <div>
+        <div class="ur-name">${u.name}</div>
+        <div class="ur-email">${u.email}</div>
+      </div>
+      <div class="ur-right">
+        <span class="badge badge-${u.role}">${u.role}</span>
+        ${!showApprove?`<span class="badge ${u.approved?'badge-active':'badge-pending'}">${u.approved?'✓ Active':'⏳ Pending'}</span>`:''}
+        ${showApprove?`<button class="btn btn-approve" onclick="approveUser('${u._id}')">✓ Approve</button>`:''}
+        <button class="btn btn-delete" onclick="deleteUser('${u._id}')">✕ Delete</button>
+      </div>
+    </div>`;
+  }
+
+  async function loadStats() {
+    const res = await fetch(`${API}/admin/users`, {headers});
+    const users = await res.json();
+    document.getElementById('s-total').textContent = users.length;
+    const p = users.filter(u=>!u.approved).length;
+    document.getElementById('s-pending').textContent = p;
+    document.getElementById('s-approved').textContent = users.filter(u=>u.approved).length;
+    document.getElementById('s-students').textContent = users.filter(u=>u.role==='student').length;
+    const badge = document.getElementById('pending-badge');
+    if (p>0) { badge.textContent=p; badge.style.display='inline'; } else badge.style.display='none';
+  }
+
+  async function loadPending() {
+    const res = await fetch(`${API}/admin/pending`, {headers});
+    const data = await res.json();
+    const el = document.getElementById('pending-list');
+    if (!data.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">🎉</div><div class="empty-title">No pending approvals!</div></div>'; return; }
+    el.innerHTML = data.map(u => userRow(u, true)).join('');
+  }
+
+  async function loadUsers() {
+    const res = await fetch(`${API}/admin/users`, {headers});
+    const data = await res.json();
+    document.getElementById('users-count').textContent = `${data.length} users`;
+    document.getElementById('users-list').innerHTML = data.map(u => userRow(u, false)).join('');
+  }
+
+  async function loadAssign() {
+    const res = await fetch(`${API}/admin/users`, {headers});
+    const users = await res.json();
+    const students = users.filter(u=>u.role==='student'&&u.approved);
+    const mentors = users.filter(u=>u.role==='mentor'&&u.approved);
+    document.getElementById('student-select').innerHTML = students.map(s=>`<option value="${s._id}">${s.name}</option>`).join('');
+    document.getElementById('mentor-select').innerHTML = mentors.map(m=>`<option value="${m._id}">${m.name}</option>`).join('');
+  }
+
+  async function approveUser(id) {
+    await fetch(`${API}/admin/approve/${id}`, {method:'PUT',headers});
+    toast('User approved!'); loadPending(); loadStats();
+  }
+
+  async function deleteUser(id) {
+    if (!confirm('Delete this user?')) return;
+    await fetch(`${API}/admin/user/${id}`, {method:'DELETE',headers});
+    toast('User deleted','error'); loadPending(); loadUsers(); loadStats();
+  }
+
+  async function assignMentor() {
+    const studentId = document.getElementById('student-select').value;
+    const mentorId = document.getElementById('mentor-select').value;
+    if (!studentId||!mentorId) return;
+    await fetch(`${API}/mentor/assign`, {method:'PUT',headers,body:JSON.stringify({studentId,mentorId})});
+    toast('Mentor assigned!');
+    const msg = document.getElementById('assign-msg');
+    msg.classList.add('show');
+    setTimeout(()=>msg.classList.remove('show'), 3000);
+  }
+
+  loadPending(); loadStats();
+</script>
+</body>
+</html>

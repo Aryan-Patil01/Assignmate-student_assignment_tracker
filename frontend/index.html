@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssignMate - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #764ba2 0%, #f093fb 100%);
+            --dark-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            
+            --light-bg: #ffffff;
+            --light-text: #1a1a1a;
+            --light-border: #e5e7eb;
+            --light-input-bg: #f9fafb;
+            --light-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            
+            --dark-bg: #0f172a;
+            --dark-text: #f8fafc;
+            --dark-border: #334155;
+            --dark-input-bg: #1e293b;
+            --dark-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            
+            --accent-color: #667eea;
+            --accent-hover: #5568d3;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--light-bg);
+            color: var(--light-text);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body.dark-mode {
+            background: var(--dark-bg);
+            color: var(--dark-text);
+        }
+
+        /* Container */
+        .login-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Left Section - Branding */
+        .branding-section {
+            flex: 1;
+            background: var(--primary-gradient);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .branding-section::before {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -50px;
+            right: -50px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .branding-section::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: -100px;
+            left: -100px;
+            animation: float 8s ease-in-out infinite reverse;
+        }
+
+        .branding-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            color: white;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .tagline {
+            font-size: 18px;
+            font-weight: 300;
+            opacity: 0.95;
+            letter-spacing: 0.3px;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) translateX(0px);
+            }
+            50% {
+                transform: translateY(-30px) translateX(20px);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Right Section - Login Form */
+        .form-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            position: relative;
+            background: var(--light-bg);
+            transition: background-color 0.3s ease;
+        }
+
+        body.dark-mode .form-section {
+            background: var(--dark-bg);
+        }
+
+        .form-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 70%, rgba(102, 126, 234, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            animation: gradient-shift 15s ease infinite;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% {
+                transform: translate(0, 0);
+            }
+            50% {
+                transform: translate(30px, 30px);
+            }
+        }
+
+        .form-card {
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-background {
+            background: var(--light-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid var(--light-border);
+            padding: 40px;
+            box-shadow: var(--light-shadow);
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .card-background {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: var(--dark-border);
+            box-shadow: var(--dark-shadow);
+        }
+
+        .form-header {
+            margin-bottom: 32px;
+        }
+
+        .form-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        body.dark-mode .form-title {
+            background: linear-gradient(135deg, #667eea 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 400;
+        }
+
+        body.dark-mode .form-subtitle {
+            color: #cbd5e1;
+        }
+
+        /* Tabs */
+        .tab-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            border-bottom: 2px solid var(--light-border);
+            transition: border-color 0.3s ease;
+        }
+
+        body.dark-mode .tab-container {
+            border-bottom-color: var(--dark-border);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s ease;
+            text-transform: capitalize;
+        }
+
+        body.dark-mode .tab-button {
+            color: #94a3b8;
+        }
+
+        .tab-button.active {
+            color: var(--accent-color);
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-color);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: scaleX(0);
+                transform-origin: left;
+            }
+            to {
+                transform: scaleX(1);
+            }
+        }
+
+        /* Form Content */
+        .form-content {
+            display: none;
+        }
+
+        .form-content.active {
+            display: block;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        /* Form Group */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--light-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        body.dark-mode .form-label {
+            color: var(--dark-text);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            font-size: 18px;
+            color: #9ca3af;
+            transition: color 0.3s ease;
+            pointer-events: none;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 14px 12px 44px;
+            background: var(--light-input-bg);
+            border: 1.5px solid var(--light-border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            color: var(--light-text);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        body.dark-mode .input-field {
+            background: var(--dark-input-bg);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .input-field::placeholder {
+            color: #9ca3af;
+        }
+
+        body.dark-mode .input-field::placeholder {
+            color: #64748b;
+        }
+
+        .input-field:focus {
+            border-color: var(--accent-color);
+            background: var(--light-bg);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        body.dark-mode .input-field:focus {
+            background: rgba(102, 126, 234, 0.05);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .input-field:focus + .input-icon {
+            color: var(--accent-color);
+        }
+
+        /* Password Toggle */
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #9ca3af;
+            transition: color 0.3s ease;
+            padding: 4px;
+        }
+
+        .password-toggle:hover {
+            color: var(--accent-color);
+        }
+
+        /* Remember Me & Forgot Password */
+        .form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-color);
+        }
+
+        .checkbox-label {
+            cursor: pointer;
+            color: var(--light-text);
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .checkbox-label {
+            color: var(--dark-text);
+        }
+
+        .checkbox-label:hover {
+            color: var(--accent-color);
+        }
+
+        .forgot-password {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s ease;
+        }
+
+        .forgot-password:hover {
+            opacity: 0.7;
+        }
+
+        /* Submit Button */
+        .submit-button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .submit-button:active {
+            transform: translateY(0);
+        }
+
+        /* Dark Mode Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: var(--light-input-bg);
+            border: 1.5px solid var(--light-border);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        body.dark-mode .theme-toggle {
+            background: var(--dark-input-bg);
+            border-color: var(--dark-border);
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(20deg) scale(1.1);
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
+        body.dark-mode .divider {
+            color: #64748b;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--light-border);
+        }
+
+        body.dark-mode .divider::before,
+        body.dark-mode .divider::after {
+            background: var(--dark-border);
+        }
+
+        .divider span {
+            padding: 0 12px;
+        }
+
+        /* Social Buttons */
+        .social-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .social-button {
+            padding: 10px;
+            background: var(--light-input-bg);
+            border: 1.5px solid var(--light-border);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body.dark-mode .social-button {
+            background: var(--dark-input-bg);
+            border-color: var(--dark-border);
+        }
+
+        .social-button:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+            }
+
+            .branding-section {
+                min-height: 300px;
+                padding: 40px 20px;
+            }
+
+            .branding-section::before,
+            .branding-section::after {
+                width: 250px;
+                height: 250px;
+            }
+
+            .logo {
+                font-size: 36px;
+            }
+
+            .form-section {
+                padding: 20px;
+            }
+
+            .form-card {
+                max-width: 100%;
+            }
+
+            .card-background {
+                padding: 30px;
+            }
+
+            .form-title {
+                font-size: 24px;
+            }
+
+            @media (max-width: 480px) {
+                .form-footer {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 12px;
+                }
+
+                .tab-button {
+                    font-size: 12px;
+                    padding: 10px 12px;
+                }
+
+                .logo {
+                    font-size: 28px;
+                    margin-bottom: 12px;
+                }
+
+                .tagline {
+                    font-size: 14px;
+                }
+
+                .card-background {
+                    padding: 24px;
+                }
+
+                .theme-toggle {
+                    width: 44px;
+                    height: 44px;
+                    font-size: 20px;
+                }
+            }
+        }
+
+        /* Input validation */
+        .input-field.error {
+            border-color: var(--error-color);
+            background-color: rgba(239, 68, 68, 0.05);
+        }
+
+        .error-message {
+            font-size: 12px;
+            color: var(--error-color);
+            margin-top: 6px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Loading state */
+        .submit-button.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Signup Form */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Link styling */
+        .signup-link,
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        body.dark-mode .signup-link,
+        body.dark-mode .login-link {
+            color: #cbd5e1;
+        }
+
+        .signup-link a,
+        .login-link a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: opacity 0.3s ease;
+        }
+
+        .signup-link a:hover,
+        .login-link a:hover {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <!-- Dark Mode Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <span id="themeIcon">🌙</span>
+    </button>
+
+    <div class="login-container">
+        <!-- Left Section: Branding -->
+        <div class="branding-section">
+            <div class="branding-content">
+                <div class="logo">
+                    <div class="logo-icon">✓</div>
+                    <span>AssignMate</span>
+                </div>
+                <p class="tagline">Manage assignments smarter</p>
+            </div>
+        </div>
+
+        <!-- Right Section: Login Form -->
+        <div class="form-section">
+            <div class="form-card">
+                <div class="card-background">
+                    <!-- Form Header -->
+                    <div class="form-header">
+                        <h1 class="form-title" id="formTitle">Welcome Back</h1>
+                        <p class="form-subtitle" id="formSubtitle">Sign in to your AssignMate account</p>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="tab-container">
+                        <button class="tab-button active" data-tab="login">Login</button>
+                        <button class="tab-button" data-tab="register">Register</button>
+                    </div>
+
+                    <!-- Login Form -->
+                    <form id="loginForm" class="form-content active" onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="email" 
+                                    class="input-field" 
+                                    placeholder="you@example.com"
+                                    id="loginEmail"
+                                    required
+                                >
+                                <span class="input-icon">📧</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="password" 
+                                    class="input-field" 
+                                    placeholder="••••••••"
+                                    id="loginPassword"
+                                    required
+                                >
+                                <span class="input-icon">🔒</span>
+                                <button type="button" class="password-toggle" onclick="togglePassword('loginPassword')">👁️</button>
+                            </div>
+                        </div>
+
+                        <div class="form-footer">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="rememberMe" class="checkbox">
+                                <label for="rememberMe" class="checkbox-label">Remember me</label>
+                            </div>
+                            <a href="#" class="forgot-password">Forgot password?</a>
+                        </div>
+
+                        <button type="submit" class="submit-button">Sign In</button>
+
+                        <p class="signup-link">
+                            Don't have an account? <a href="#" onclick="switchTab('register', event)">Create one</a>
+                        </p>
+                    </form>
+
+                    <!-- Register Form -->
+                    <form id="registerForm" class="form-content" onsubmit="handleRegister(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">First Name</label>
+                                <div class="input-wrapper">
+                                    <input 
+                                        type="text" 
+                                        class="input-field" 
+                                        placeholder="John"
+                                        id="firstName"
+                                        required
+                                    >
+                                    <span class="input-icon">👤</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Last Name</label>
+                                <div class="input-wrapper">
+                                    <input 
+                                        type="text" 
+                                        class="input-field" 
+                                        placeholder="Doe"
+                                        id="lastName"
+                                        required
+                                    >
+                                    <span class="input-icon">👤</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="email" 
+                                    class="input-field" 
+                                    placeholder="you@example.com"
+                                    id="registerEmail"
+                                    required
+                                >
+                                <span class="input-icon">📧</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="password" 
+                                    class="input-field" 
+                                    placeholder="••••••••"
+                                    id="registerPassword"
+                                    required
+                                >
+                                <span class="input-icon">🔒</span>
+                                <button type="button" class="password-toggle" onclick="togglePassword('registerPassword')">👁️</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Confirm Password</label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="password" 
+                                    class="input-field" 
+                                    placeholder="••••••••"
+                                    id="confirmPassword"
+                                    required
+                                >
+                                <span class="input-icon">🔒</span>
+                                <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">👁️</button>
+                            </div>
+                        </div>
+
+                        <div class="checkbox-wrapper" style="margin-bottom: 24px;">
+                            <input type="checkbox" id="agreeTerms" class="checkbox" required>
+                            <label for="agreeTerms" class="checkbox-label">I agree to the Terms & Conditions</label>
+                        </div>
+
+                        <button type="submit" class="submit-button">Create Account</button>
+
+                        <p class="login-link">
+                            Already have an account? <a href="#" onclick="switchTab('login', event)">Sign in</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark Mode Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        // Check for saved theme preference or default to light mode
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeIcon.textContent = '☀️';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            themeIcon.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+
+        // Tab Switching
+        function switchTab(tabName, event) {
+            event.preventDefault();
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const formContents = document.querySelectorAll('.form-content');
+            const formTitle = document.getElementById('formTitle');
+            const formSubtitle = document.getElementById('formSubtitle');
+
+            // Remove active class from all tabs and forms
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            formContents.forEach(form => form.classList.remove('active'));
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+
+            // Show corresponding form
+            const form = document.getElementById(tabName + 'Form');
+            form.classList.add('active');
+
+            // Update header text
+            if (tabName === 'login') {
+                formTitle.textContent = 'Welcome Back';
+                formSubtitle.textContent = 'Sign in to your AssignMate account';
+            } else {
+                formTitle.textContent = 'Create Account';
+                formSubtitle.textContent = 'Join AssignMate to get started';
+            }
+        }
+
+        // Set up tab button listeners
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                switchTab(e.target.dataset.tab, e);
+            });
+        });
+
+        // Password Visibility Toggle
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            event.target.textContent = isPassword ? '🙈' : '👁️';
+        }
+
+       async function handleLogin(event) {
+    event.preventDefault();
+
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    const button = event.target.querySelector('.submit-button');
+    button.classList.add('loading');
+    button.textContent = 'Signing in...';
+
+    try {
+        const res = await fetch("http://localhost:5000/api/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert("Login successful!");
+
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("role", data.role);
+
+            if (data.role === "admin") {
+                window.location.href = "admin.html";
+            } else if (data.role === "teacher") {
+                window.location.href = "teacher.html";
+            } else if (data.role === "student") {
+                window.location.href = "student.html";
+            } else if (data.role === "mentor") {
+                window.location.href = "mentor.html";
+            }
+
+        } else {
+            alert(data.message || "Login failed");
+        }
+
+    } catch (error) {
+        console.error(error);
+        alert("Server error");
+    }
+
+    button.classList.remove('loading');
+    button.textContent = 'Sign In';
+}
+
+        function handleRegister(event) {
+            event.preventDefault();
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+
+            console.log('Registration attempt:', { firstName, lastName, email });
+            
+            // Add loading state
+            const button = event.target.querySelector('.submit-button');
+            button.classList.add('loading');
+            button.textContent = 'Creating account...';
+
+            // Simulate API call
+            setTimeout(() => {
+                alert('Account created successfully! (Demo mode)');
+                button.classList.remove('loading');
+                button.textContent = 'Create Account';
+            }, 1500);
+        }
+
+        // Add smooth transition for color mode
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+        });
+    </script>
+</body>
+</html>

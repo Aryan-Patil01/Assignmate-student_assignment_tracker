@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SATS — Teacher Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; display: flex; background: #f0f4ff; overflow: hidden; }
+
+.sidebar {
+  width: 240px; flex-shrink: 0;
+  background: linear-gradient(160deg, #0f0c29, #1a1060, #24243e);
+  display: flex; flex-direction: column; padding: 1.5rem 1rem; position: relative; overflow: hidden;
+}
+.orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.25; }
+.orb1 { width: 250px; height: 250px; background: #10b981; top: -80px; right: -80px; }
+.orb2 { width: 200px; height: 200px; background: #6366f1; bottom: -60px; left: -60px; }
+.grid-bg {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+.sidebar-inner { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; }
+
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0.5rem; }
+.brand-icon {
+  width: 38px; height: 38px; background: linear-gradient(135deg, #10b981, #059669);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 17px; box-shadow: 0 6px 18px rgba(16,185,129,0.5);
+}
+.brand-name { font-size: 1.1rem; font-weight: 800; color: white; letter-spacing: -0.02em; }
+.brand-tag { font-size: 0.6rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.1em; }
+
+.nav-section { font-size: 0.6rem; font-weight: 700; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.12em; padding: 0 0.5rem; margin: 1rem 0 0.4rem; }
+.nav-item {
+  display: flex; align-items: center; gap: 9px; padding: 0.6rem 0.75rem; border-radius: 10px;
+  cursor: pointer; transition: all 0.2s; font-size: 0.82rem; font-weight: 600;
+  color: rgba(255,255,255,0.45); margin-bottom: 2px;
+}
+.nav-item:hover { background: rgba(255,255,255,0.07); color: white; }
+.nav-item.active { background: rgba(16,185,129,0.2); color: white; border-left: 3px solid #10b981; }
+.nav-icon { font-size: 0.95rem; width: 18px; text-align: center; }
+
+.sidebar-bottom { margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); }
+.user-card { display: flex; align-items: center; gap: 9px; padding: 0.6rem 0.5rem; border-radius: 10px; background: rgba(255,255,255,0.05); margin-bottom: 0.6rem; }
+.user-av {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.82rem; font-weight: 800; color: white; flex-shrink: 0;
+}
+.user-name { font-size: 0.8rem; font-weight: 700; color: white; }
+.user-role-lbl { font-size: 0.62rem; color: rgba(255,255,255,0.35); }
+.logout-btn {
+  width: 100%; padding: 0.55rem; background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2); border-radius: 9px;
+  color: #fca5a5; font-size: 0.78rem; font-weight: 700;
+  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.2s;
+}
+.logout-btn:hover { background: rgba(239,68,68,0.2); }
+
+.main { flex: 1; background: white; position: relative; overflow-y: auto; }
+.main::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, rgba(16,185,129,0.04) 1px, transparent 0);
+  background-size: 24px 24px; pointer-events: none;
+}
+.main-inner { position: relative; z-index: 1; padding: 2rem 2.5rem; }
+
+.page-header { margin-bottom: 2rem; }
+.page-title { font-size: 1.6rem; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; }
+.page-sub { font-size: 0.85rem; color: #94a3b8; margin-top: 0.2rem; }
+
+.section { display: none; animation: fadeUp 0.3s ease; }
+.section.active { display: block; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Form */
+.form-card { background: #fafafa; border: 1.5px solid #f1f5f9; border-radius: 18px; padding: 1.75rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+.form-full { grid-column: 1 / -1; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 0.75rem; font-weight: 700; color: #475569; letter-spacing: 0.02em; }
+input[type="text"], input[type="number"], input[type="datetime-local"], textarea {
+  padding: 0.75rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 11px;
+  font-size: 0.875rem; color: #0f172a; outline: none;
+  font-family: 'Plus Jakarta Sans', sans-serif; background: white; transition: all 0.2s;
+}
+input::placeholder, textarea::placeholder { color: #c0c9d8; }
+input:focus, textarea:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+.chips-wrap { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  padding: 0.4rem 0.85rem; border: 1.5px solid #e2e8f0;
+  border-radius: 9px; font-size: 0.78rem; font-weight: 700; color: #64748b;
+  cursor: pointer; transition: all 0.2s; background: white;
+}
+.chip:hover { border-color: #a7f3d0; color: #059669; background: #f0fdf4; }
+.chip.selected { border-color: #10b981; background: #d1fae5; color: #065f46; }
+
+.btn-primary {
+  padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #10b981, #059669);
+  color: white; border: none; border-radius: 11px; font-size: 0.9rem; font-weight: 800;
+  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+  box-shadow: 0 6px 16px rgba(16,185,129,0.35); transition: all 0.2s; margin-top: 1.25rem;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(16,185,129,0.45); }
+
+/* Assignment cards */
+.assignments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+.a-card {
+  background: #fafafa; border: 1.5px solid #f1f5f9; border-radius: 16px; padding: 1.4rem;
+  transition: all 0.25s; display: flex; flex-direction: column; gap: 0.6rem;
+}
+.a-card:hover { border-color: #a7f3d0; transform: translateY(-3px); box-shadow: 0 10px 24px rgba(16,185,129,0.1); }
+.ac-subject { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #10b981; }
+.ac-title { font-size: 0.975rem; font-weight: 800; color: #0f172a; line-height: 1.3; }
+.ac-desc { font-size: 0.8rem; color: #94a3b8; line-height: 1.6; }
+.ac-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 0.75rem; border-top: 1px solid #f1f5f9; margin-top: auto; }
+.ac-deadline { font-size: 0.75rem; color: #94a3b8; }
+.ac-students { font-size: 0.75rem; color: #10b981; font-weight: 800; }
+
+/* Submissions */
+.sub-select-wrap { margin-bottom: 1.5rem; }
+.sub-select-wrap select {
+  padding: 0.75rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 11px;
+  font-size: 0.875rem; color: #0f172a; outline: none; max-width: 420px; width: 100%;
+  font-family: 'Plus Jakarta Sans', sans-serif; background: white;
+}
+.sub-select-wrap select:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+
+.sub-card {
+  background: #fafafa; border: 1.5px solid #f1f5f9; border-radius: 16px;
+  padding: 1.4rem; margin-bottom: 0.75rem; transition: all 0.2s;
+}
+.sub-card:hover { border-color: #e0e7ff; }
+.sub-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.sub-sname { font-size: 0.9rem; font-weight: 800; color: #0f172a; }
+.sub-semail { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+.sub-text-box {
+  background: white; border: 1.5px solid #f1f5f9; border-radius: 10px;
+  padding: 0.85rem; margin-bottom: 1rem; font-size: 0.85rem; color: #475569; line-height: 1.6;
+}
+.sub-file-link {
+  display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.9rem;
+  border-radius: 8px; background: #ede9fe; border: 1px solid #ddd6fe;
+  color: #7c3aed; font-size: 0.78rem; font-weight: 700;
+  text-decoration: none; margin-bottom: 0.75rem; transition: all 0.2s;
+}
+.sub-file-link:hover { background: #ddd6fe; }
+.grade-row { display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; }
+.save-row { display: flex; align-items: center; gap: 1rem; margin-top: 0.75rem; }
+.btn-save {
+  padding: 0.5rem 1.1rem; background: #d1fae5; border: 1px solid #a7f3d0;
+  color: #065f46; border-radius: 9px; font-size: 0.78rem; font-weight: 800;
+  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.2s;
+}
+.btn-save:hover { background: #a7f3d0; }
+.save-msg { font-size: 0.8rem; font-weight: 700; color: #059669; }
+
+.badge {
+  padding: 0.22rem 0.7rem; border-radius: 20px;
+  font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.badge-submitted { background: #d1fae5; color: #065f46; }
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-late { background: #fee2e2; color: #991b1b; }
+
+.empty-state { text-align: center; padding: 3rem 2rem; color: #94a3b8; }
+.empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.empty-title { font-size: 0.95rem; font-weight: 700; color: #475569; margin-bottom: 0.3rem; }
+
+.skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 14px; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.toast-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999; display: flex; flex-direction: column; gap: 0.5rem; }
+.toast { padding: 0.85rem 1.25rem; border-radius: 12px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem; min-width: 260px; animation: toastIn 0.4s cubic-bezier(0.34,1.56,0.64,1); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+.toast.success { background: #f0fdf4; border: 1.5px solid #bbf7d0; color: #15803d; }
+.toast.error { background: #fef2f2; border: 1.5px solid #fecaca; color: #dc2626; }
+</style>
+</head>
+<body>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<div class="sidebar">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="grid-bg"></div>
+  <div class="sidebar-inner">
+    <div class="brand">
+      <div class="brand-icon">👨‍🏫</div>
+      <div>
+        <div class="brand-name">SATS</div>
+        <div class="brand-tag">Teacher Panel</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Workspace</div>
+    <div class="nav-item active" onclick="showSection('create',this)">
+      <span class="nav-icon">✏️</span> Create Assignment
+    </div>
+    <div class="nav-item" onclick="showSection('assignments',this)">
+      <span class="nav-icon">📚</span> My Assignments
+    </div>
+    <div class="nav-item" onclick="showSection('submissions',this)">
+      <span class="nav-icon">📬</span> Submissions
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-av" id="user-av">T</div>
+        <div>
+          <div class="user-name" id="teacher-name">Teacher</div>
+          <div class="user-role-lbl">Teacher</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">↩ Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="main-inner">
+
+    <!-- Create -->
+    <div class="section active" id="create">
+      <div class="page-header">
+        <div class="page-title">Create Assignment</div>
+        <div class="page-sub">Assign work with deadlines to your students</div>
+      </div>
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="form-label">Assignment Title *</div>
+            <input type="text" id="a-title" placeholder="e.g. TCP Header Analysis">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Subject *</div>
+            <input type="text" id="a-subject" placeholder="e.g. Computer Networks">
+          </div>
+          <div class="form-group form-full">
+            <div class="form-label">Description</div>
+            <textarea id="a-desc" placeholder="Assignment instructions, references, submission format..."></textarea>
+          </div>
+          <div class="form-group">
+            <div class="form-label">Deadline *</div>
+            <input type="datetime-local" id="a-deadline">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Max Marks</div>
+            <input type="number" id="a-marks" placeholder="e.g. 100">
+          </div>
+          <div class="form-group form-full">
+            <div class="form-label">Assign To Students *</div>
+            <div class="chips-wrap" id="student-list">
+              <div class="skeleton" style="height:34px;width:110px;border-radius:9px;"></div>
+              <div class="skeleton" style="height:34px;width:90px;border-radius:9px;"></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <button class="btn-primary" onclick="createAssignment()">Create Assignment →</button>
+          <div id="create-msg" style="font-size:0.85rem;font-weight:700;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assignments -->
+    <div class="section" id="assignments">
+      <div class="page-header">
+        <div class="page-title">My Assignments</div>
+        <div class="page-sub">All assignments you have created</div>
+      </div>
+      <div class="assignments-grid" id="assignments-list">
+        <div class="skeleton" style="height:180px;border-radius:16px;"></div>
+        <div class="skeleton" style="height:180px;border-radius:16px;"></div>
+      </div>
+    </div>
+
+    <!-- Submissions -->
+    <div class="section" id="submissions">
+      <div class="page-header">
+        <div class="page-title">Student Submissions</div>
+        <div class="page-sub">Review submitted work and provide grades</div>
+      </div>
+      <div class="sub-select-wrap">
+        <div class="form-label" style="margin-bottom:6px;">Select Assignment</div>
+        <select id="sub-select" onchange="loadSubmissions()">
+          <option value="">— Choose an assignment —</option>
+        </select>
+      </div>
+      <div id="submissions-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:5000/api';
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const name = localStorage.getItem('name');
+  if (!token || role !== 'teacher') window.location.href = 'index.html';
+  document.getElementById('teacher-name').textContent = name || 'Teacher';
+  document.getElementById('user-av').textContent = name ? name[0].toUpperCase() : 'T';
+  const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+  function toast(msg, type='success') {
+    const tc = document.getElementById('toasts');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span>${type==='success'?'✅':'❌'}</span>${msg}`;
+    tc.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  function showSection(sec, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(sec).classList.add('active');
+    el.classList.add('active');
+    if (sec==='create') loadStudents();
+    if (sec==='assignments') loadAssignments();
+    if (sec==='submissions') loadAssignmentSelect();
+  }
+
+  async function loadStudents() {
+    const res = await fetch(`${API}/assignments/students`, {headers});
+    const students = await res.json();
+    const el = document.getElementById('student-list');
+    if (!students.length) { el.innerHTML='<div style="color:#94a3b8;font-size:0.875rem;">No approved students found</div>'; return; }
+    el.innerHTML = students.map(s=>`<div class="chip" onclick="toggleChip(this)" data-id="${s._id}">🎓 ${s.name}</div>`).join('');
+  }
+
+  function toggleChip(el) { el.classList.toggle('selected'); }
+
+  async function createAssignment() {
+    const title = document.getElementById('a-title').value.trim();
+    const subject = document.getElementById('a-subject').value.trim();
+    const description = document.getElementById('a-desc').value.trim();
+    const deadline = document.getElementById('a-deadline').value;
+    const selected = [...document.querySelectorAll('.chip.selected')].map(c=>c.dataset.id);
+    const msgEl = document.getElementById('create-msg');
+    if (!title||!subject||!deadline||!selected.length) {
+      msgEl.style.color='#dc2626'; msgEl.textContent='⚠️ Fill all fields and select at least one student.'; return;
+    }
+    const res = await fetch(`${API}/assignments`, {method:'POST',headers,body:JSON.stringify({title,subject,description,deadline,assignedTo:selected})});
+    const data = await res.json();
+    if (res.ok) {
+      msgEl.style.color='#059669'; msgEl.textContent='✅ Assignment created!';
+      toast('Assignment created!');
+      document.getElementById('a-title').value='';
+      document.getElementById('a-subject').value='';
+      document.getElementById('a-desc').value='';
+      document.getElementById('a-marks').value='';
+      document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));
+    } else { msgEl.style.color='#dc2626'; msgEl.textContent='❌ '+data.message; }
+  }
+
+  async function loadAssignments() {
+    const res = await fetch(`${API}/assignments`, {headers});
+    const data = await res.json();
+    const el = document.getElementById('assignments-list');
+    if (!data.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">📚</div><div class="empty-title">No assignments yet</div></div>'; return; }
+    el.innerHTML = data.map(a=>`
+      <div class="a-card">
+        <div class="ac-subject">${a.subject}</div>
+        <div class="ac-title">${a.title}</div>
+        ${a.description?`<div class="ac-desc">${a.description}</div>`:''}
+        <div class="ac-footer">
+          <div class="ac-deadline">📅 ${new Date(a.deadline).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+          <div class="ac-students">👥 ${a.assignedTo.length} students</div>
+        </div>
+      </div>`).join('');
+  }
+
+  async function loadAssignmentSelect() {
+    const res = await fetch(`${API}/assignments`, {headers});
+    const data = await res.json();
+    const sel = document.getElementById('sub-select');
+    sel.innerHTML = '<option value="">— Choose an assignment —</option>' + data.map(a=>`<option value="${a._id}">${a.title} — ${a.subject}</option>`).join('');
+  }
+
+  async function loadSubmissions() {
+    const id = document.getElementById('sub-select').value;
+    if (!id) return;
+    const res = await fetch(`${API}/submissions/assignment/${id}`, {headers});
+    const data = await res.json();
+    const el = document.getElementById('submissions-list');
+    if (!data.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">📬</div><div class="empty-title">No submissions yet</div></div>'; return; }
+    el.innerHTML = data.map(s=>`
+      <div class="sub-card">
+        <div class="sub-header">
+          <div><div class="sub-sname">${s.studentId.name}</div><div class="sub-semail">${s.studentId.email}</div></div>
+          <span class="badge badge-${s.status}">${s.status}</span>
+        </div>
+        <div class="sub-text-box">${s.submittedText||'<span style="color:#c0c9d8">No text submitted</span>'}</div>
+        ${s.fileUrl?`<a class="sub-file-link" href="${API.replace('/api','')}/uploads/${s.fileUrl}" target="_blank">📎 ${s.fileName||'Download'}</a><br>`:''}
+        <div class="grade-row">
+          <div class="form-group"><div class="form-label">Grade</div><input type="text" id="grade-${s._id}" value="${s.grade||''}" placeholder="A, B+, 85..."></div>
+          <div class="form-group"><div class="form-label">Feedback</div><input type="text" id="fb-${s._id}" value="${s.feedback||''}" placeholder="Great work on..."></div>
+        </div>
+        <div class="save-row">
+          <button class="btn-save" onclick="saveFeedback('${s._id}')">💾 Save</button>
+          <span class="save-msg" id="msg-${s._id}"></span>
+        </div>
+      </div>`).join('');
+  }
+
+  async function saveFeedback(subId) {
+    const grade = document.getElementById(`grade-${subId}`).value;
+    const feedback = document.getElementById(`fb-${subId}`).value;
+    await fetch(`${API}/submissions/feedback/${subId}`, {method:'PUT',headers,body:JSON.stringify({grade,feedback})});
+    document.getElementById(`msg-${subId}`).textContent='✅ Saved!';
+    toast('Feedback saved!');
+  }
+
+  loadStudents();
+</script>
+</body>
+</html>
