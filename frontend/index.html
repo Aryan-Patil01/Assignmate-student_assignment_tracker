@@ -879,6 +879,19 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label class="form-label">Role</label>
+                            <div class="input-wrapper">
+                                <select id="registerRole" class="input-field" required>
+                                    <option value="" disabled selected>Select role</option>
+                                    <option value="student">Student</option>
+                                    <option value="teacher">Teacher</option>
+                                    <option value="mentor">Mentor</option>
+                                </select>
+                                <span class="input-icon">👤</span>
+                            </div>
+                        </div>
+
                         <div class="checkbox-wrapper" style="margin-bottom: 24px;">
                             <input type="checkbox" id="agreeTerms" class="checkbox" required>
                             <label for="agreeTerms" class="checkbox-label">I agree to the Terms & Conditions</label>
@@ -981,10 +994,10 @@
         const data = await res.json();
 
         if (res.ok) {
-            alert("Login successful!");
-
             localStorage.setItem("token", data.token);
             localStorage.setItem("role", data.role);
+            localStorage.setItem("name", data.name);
+            localStorage.setItem("id", data.id);
 
             if (data.role === "admin") {
                 window.location.href = "admin.html";
@@ -1009,32 +1022,62 @@
     button.textContent = 'Sign In';
 }
 
-        function handleRegister(event) {
+        async function handleRegister(event) {
             event.preventDefault();
             const firstName = document.getElementById('firstName').value;
             const lastName = document.getElementById('lastName').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+            const registerRole = document.getElementById('registerRole').value;
 
             if (password !== confirmPassword) {
                 alert('Passwords do not match!');
                 return;
             }
 
-            console.log('Registration attempt:', { firstName, lastName, email });
+            if (!registerRole) {
+                alert('Please select a role!');
+                return;
+            }
+
+            const name = firstName + " " + lastName;
             
             // Add loading state
             const button = event.target.querySelector('.submit-button');
             button.classList.add('loading');
             button.textContent = 'Creating account...';
 
-            // Simulate API call
-            setTimeout(() => {
-                alert('Account created successfully! (Demo mode)');
+            try {
+                const res = await fetch("http://localhost:5000/api/auth/register", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ name, email, password, role: registerRole })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('Registration successful! Please wait for admin approval.');
+                    button.classList.remove('loading');
+                    button.textContent = 'Create Account';
+                    
+                    // Switch to login tab
+                    const mockEvent = new Event('click');
+                    switchTab('login', mockEvent);
+                } else {
+                    alert(data.message || 'Registration failed');
+                    button.classList.remove('loading');
+                    button.textContent = 'Create Account';
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Server error");
                 button.classList.remove('loading');
                 button.textContent = 'Create Account';
-            }, 1500);
+            }
         }
 
         // Add smooth transition for color mode
