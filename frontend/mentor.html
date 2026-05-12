@@ -189,9 +189,14 @@ input[type="text"]::placeholder { color: #c0c9d8; }
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
   const name = localStorage.getItem('name');
-  if (!token || role !== 'mentor') window.location.href = 'index.html';
+
+  if (!token || role !== 'mentor') {
+    window.location.replace('index.html');
+    throw new Error('Unauthorized'); // Halt execution immediately
+  }
+
   document.getElementById('mentor-name').textContent = name || 'Mentor';
-  document.getElementById('user-av').textContent = name ? name[0].toUpperCase() : 'M';
+  document.getElementById('user-av').textContent = name ? name.charAt(0).toUpperCase() : 'M';
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   function logout() { localStorage.clear(); window.location.href = 'index.html'; }

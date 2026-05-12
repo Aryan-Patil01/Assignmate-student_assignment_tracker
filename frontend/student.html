@@ -324,9 +324,14 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
   const name = localStorage.getItem('name');
-  if (!token || role !== 'student') window.location.href = 'index.html';
+  
+  if (!token || role !== 'student') {
+    window.location.replace('index.html');
+    throw new Error('Unauthorized'); // Stop further execution immediately
+  }
+  
   document.getElementById('student-name').textContent = name || 'Student';
-  document.getElementById('user-av').textContent = name ? name[0].toUpperCase() : 'S';
+  document.getElementById('user-av').textContent = name ? name.charAt(0).toUpperCase() : 'S';
 
   // Greeting
   const hr = new Date().getHours();

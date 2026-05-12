@@ -306,9 +306,14 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
   const name = localStorage.getItem('name');
-  if (!token || role !== 'teacher') window.location.href = 'index.html';
+  
+  if (!token || role !== 'teacher') {
+    window.location.replace('index.html');
+    throw new Error('Unauthorized'); // Halt execution immediately
+  }
+  
   document.getElementById('teacher-name').textContent = name || 'Teacher';
-  document.getElementById('user-av').textContent = name ? name[0].toUpperCase() : 'T';
+  document.getElementById('user-av').textContent = name ? name.charAt(0).toUpperCase() : 'T';
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   function logout() { localStorage.clear(); window.location.href = 'index.html'; }

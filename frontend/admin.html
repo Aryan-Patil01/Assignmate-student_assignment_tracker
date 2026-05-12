@@ -317,9 +317,14 @@ select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1)
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
   const name = localStorage.getItem('name');
-  if (!token || role !== 'admin') window.location.href = 'index.html';
+  
+  if (!token || role !== 'admin') {
+    window.location.replace('index.html');
+    throw new Error('Unauthorized'); // Halt execution immediately
+  }
+  
   document.getElementById('admin-name').textContent = name || 'Admin';
-  document.getElementById('user-av').textContent = name ? name[0].toUpperCase() : 'A';
+  document.getElementById('user-av').textContent = name ? name.charAt(0).toUpperCase() : 'A';
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   function logout() { localStorage.clear(); window.location.href = 'index.html'; }
