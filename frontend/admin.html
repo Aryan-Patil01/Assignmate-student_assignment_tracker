@@ -318,13 +318,34 @@ select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1)
   const role = localStorage.getItem('role');
   const name = localStorage.getItem('name');
   
-  if (!token || role !== 'admin') {
-    window.location.replace('index.html');
-    throw new Error('Unauthorized'); // Halt execution immediately
-  }
-  
-  document.getElementById('admin-name').textContent = name || 'Admin';
-  document.getElementById('user-av').textContent = name ? name.charAt(0).toUpperCase() : 'A';
+// ── Auth Guard ──────────────────────────────────────────────
+(function guardPage() {
+    if (!token || !role) {
+        window.location.replace('index.html'); throw new Error('No session');
+    }
+    if (role !== 'admin') {
+        const map = { student:'student.html', teacher:'teacher.html', mentor:'mentor.html' };
+        window.location.replace(map[role] || 'index.html');
+        throw new Error('Wrong role');
+    }
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp && Date.now() / 1000 > payload.exp) {
+            localStorage.clear();
+            window.location.replace('index.html');
+            throw new Error('Token expired');
+        }
+    } catch(e) { if (e.message === 'Token expired') throw e; }
+})();
+// ────────────────────────────────────────────────────────────
+
+document.getElementById('admin-name').textContent = name || 'Admin';
+document.getElementById('user-av').textContent = name ? name.charAt(0).toUpperCase() : 'A';
+
+const hr = new Date().getHours();
+document.getElementById('greeting') &&
+    (document.getElementById('greeting').textContent =
+        `${hr<12?'Good morning':hr<17?'Good afternoon':'Good evening'}, ${name?.split(' ')[0]||'Admin'} 👋`);
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   function logout() { localStorage.clear(); window.location.href = 'index.html'; }

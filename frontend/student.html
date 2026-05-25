@@ -322,14 +322,35 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
 <script>
   const API = 'http://localhost:5000/api';
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
-  const name = localStorage.getItem('name');
-  
-  if (!token || role !== 'student') {
-    window.location.replace('index.html');
-    throw new Error('Unauthorized'); // Stop further execution immediately
-  }
-  
+  const role  = localStorage.getItem('role');
+  const name  = localStorage.getItem('name');
+
+  // ── Auth Guard ──────────────────────────────────────────────
+  (function guardPage() {
+      if (!token || !role) {
+          window.location.replace('index.html'); throw new Error('No session');
+      }
+      if (role !== 'student') {
+          // Redirect to correct dashboard instead of login
+          const map = { admin:'admin.html', teacher:'teacher.html', mentor:'mentor.html' };
+          window.location.replace(map[role] || 'index.html');
+          throw new Error('Wrong role');
+      }
+      // Check token expiry (JWT middle part is base64 payload)
+      try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          if (payload.exp && Date.now() / 1000 > payload.exp) {
+              localStorage.clear();
+              window.location.replace('index.html');
+              throw new Error('Token expired');
+          }
+      } catch(e) {
+          if (e.message === 'Token expired') throw e;
+          // If decode fails for other reason, let it through
+      }
+  })();
+  // ────────────────────────────────────────────────────────────
+
   document.getElementById('student-name').textContent = name || 'Student';
   document.getElementById('user-av').textContent = name ? name.charAt(0).toUpperCase() : 'S';
 
