@@ -386,6 +386,13 @@ document.getElementById('greeting') &&
         ${!showApprove?`<span class="badge ${u.approved?'badge-active':'badge-pending'}">${u.approved?'✓ Active':'⏳ Pending'}</span>`:''}
         ${showApprove?`<button class="btn btn-approve" onclick="approveUser('${u._id}')">✓ Approve</button>`:''}
         <button class="btn btn-delete" onclick="deleteUser('${u._id}')">✕ Delete</button>
+        <select id="role-${u._id}" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #ddd;margin-left:4px;">
+          <option value="student"  ${u.role==='student' ?'selected':''}>Student</option>
+          <option value="teacher"  ${u.role==='teacher' ?'selected':''}>Teacher</option>
+          <option value="mentor"   ${u.role==='mentor'  ?'selected':''}>Mentor</option>
+          <option value="admin"    ${u.role==='admin'   ?'selected':''}>Admin</option>
+        </select>
+        <button class="btn" style="background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;margin-left:4px;" onclick="changeRole('${u._id}')">↺ Role</button>
       </div>
     </div>`;
   }
@@ -438,6 +445,16 @@ document.getElementById('greeting') &&
   }
 
   async function assignMentor() {
+    async function changeRole(id) {
+    const role = document.getElementById(`role-${id}`).value;
+    const res = await fetch(`${API}/admin/role/${id}`, {
+      method: 'PUT', headers,
+      body: JSON.stringify({ role })
+    });
+    const data = await res.json();
+    if (res.ok) { toast(`Role changed to ${role}`); loadUsers(); loadStats(); }
+    else toast(data.message || 'Failed', 'error');
+  }
     const studentId = document.getElementById('student-select').value;
     const mentorId = document.getElementById('mentor-select').value;
     if (!studentId||!mentorId) return;

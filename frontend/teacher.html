@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SATS — Teacher Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -211,7 +212,12 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
     <div class="nav-item" onclick="showSection('submissions',this)">
       <span class="nav-icon">📬</span> Submissions
     </div>
-
+<div class="nav-item" onclick="showSection('analytics',this)">
+      <span class="nav-icon">📊</span> Analytics
+    </div>
+    <div class="nav-item" onclick="showSection('leaderboard',this)">
+      <span class="nav-icon">🏆</span> Leaderboard
+    </div>
     <div class="sidebar-bottom">
       <div class="user-card">
         <div class="user-av" id="user-av">T</div>
@@ -297,7 +303,38 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
       </div>
       <div id="submissions-list"></div>
     </div>
+<div id="submissions-list"></div>
+    </div>
 
+    <!-- Analytics -->
+    <div class="section" id="analytics">
+      <div class="page-header">
+        <div class="page-title">Analytics</div>
+        <div class="page-sub">Submission breakdown across all your assignments</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:700px;">
+        <div class="form-card">
+          <div class="form-label" style="margin-bottom:1rem;">Submission Status</div>
+          <canvas id="pie-chart" height="220"></canvas>
+        </div>
+        <div class="form-card">
+          <div class="form-label" style="margin-bottom:1rem;">Avg Marks per Assignment</div>
+          <canvas id="bar-chart" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="section" id="leaderboard">
+      <div class="page-header">
+        <div class="page-title">Leaderboard</div>
+        <div class="page-sub">Top students ranked by score (60% marks + 40% submission rate)</div>
+      </div>
+      <div id="leaderboard-list"></div>
+    </div>
+
+  </div>
+</div>
   </div>
 </div>
 
@@ -358,10 +395,12 @@ document.getElementById('greeting') &&
     if (sec==='create') loadStudents();
     if (sec==='assignments') loadAssignments();
     if (sec==='submissions') loadAssignmentSelect();
+    if (sec==='analytics') loadAnalytics();
+    if (sec==='leaderboard') loadLeaderboard();
   }
 
   async function loadStudents() {
-    const res = await fetch(`${API}/assignments/students`, {headers});
+    const res = await fetch(`${API}/assignments/meta/students`, {headers});
     const students = await res.json();
     const el = document.getElementById('student-list');
     if (!students.length) { el.innerHTML='<div style="color:#94a3b8;font-size:0.875rem;">No approved students found</div>'; return; }
@@ -445,12 +484,75 @@ document.getElementById('greeting') &&
 
   async function saveFeedback(subId) {
     const grade = document.getElementById(`grade-${subId}`).value;
-    const feedback = document.getElementById(`fb-${subId}`).value;
-    await fetch(`${API}/submissions/feedback/${subId}`, {method:'PUT',headers,body:JSON.stringify({grade,feedback})});
+const feedback = document.getElementById(`fb-${subId}`).value;
+const marks = parseFloat(grade) || null;
+await fetch(`${API}/submissions/evaluate/${subId}`, {
+  method: 'PUT',
+  headers,
+  body: JSON.stringify({ marks, maxMarks: 100, feedback })
+});
+alert('Evaluation saved!');
     document.getElementById(`msg-${subId}`).textContent='✅ Saved!';
     toast('Feedback saved!');
   }
+let pieChart, barChart;
+  async function loadAnalytics() {
+    const res = await fetch(`${API}/analytics/teacher`, {headers});
+    const data = await res.json();
+    if (!data.length) return;
 
+    const totalSubmitted = data.reduce((s,a)=>s+a.submitted,0);
+    const totalPending   = data.reduce((s,a)=>s+a.pending,0);
+    const totalLate      = data.reduce((s,a)=>s+(a.total-a.submitted-a.pending),0);
+
+    if (pieChart) pieChart.destroy();
+    pieChart = new Chart(document.getElementById('pie-chart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Submitted','Pending','Late'],
+        datasets:[{ data:[totalSubmitted,totalPending,totalLate],
+          backgroundColor:['#10b981','#f59e0b','#ef4444'], borderWidth:0 }]
+      },
+      options:{ plugins:{ legend:{ position:'bottom' } }, cutout:'65%' }
+    });
+
+    if (barChart) barChart.destroy();
+    barChart = new Chart(document.getElementById('bar-chart'), {
+      type: 'bar',
+      data: {
+        labels: data.map(a=>a.title.length>14?a.title.slice(0,14)+'…':a.title),
+        datasets:[{ label:'Submitted',data:data.map(a=>a.submitted),
+          backgroundColor:'#6366f1', borderRadius:6 }]
+      },
+      options:{ plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
+  }
+
+  async function loadLeaderboard() {
+    const res = await fetch(`${API}/leaderboard`, {headers});
+    const data = await res.json();
+    const el = document.getElementById('leaderboard-list');
+    if (!data.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-title">No data yet</div></div>'; return; }
+    el.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
+        <thead><tr style="text-align:left;border-bottom:2px solid #f1f5f9;">
+          <th style="padding:0.75rem 0.5rem;color:#475569;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">Rank</th>
+          <th style="padding:0.75rem 0.5rem;color:#475569;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">Student</th>
+          <th style="padding:0.75rem 0.5rem;color:#475569;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">Avg Marks</th>
+          <th style="padding:0.75rem 0.5rem;color:#475569;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">Submit Rate</th>
+          <th style="padding:0.75rem 0.5rem;color:#475569;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">Score</th>
+        </tr></thead>
+        <tbody>${data.map(e=>`
+          <tr style="border-bottom:1px solid #f8fafc;">
+            <td style="padding:0.75rem 0.5rem;font-weight:800;color:${e.rank<=3?'#f59e0b':'#94a3b8'};">${e.rank<=3?['🥇','🥈','🥉'][e.rank-1]:e.rank}</td>
+            <td style="padding:0.75rem 0.5rem;font-weight:700;color:#0f172a;">${e.student.name}<br><span style="font-size:0.72rem;color:#94a3b8;font-weight:400;">${e.student.usn||''}</span></td>
+            <td style="padding:0.75rem 0.5rem;color:#0f172a;">${e.avgMarks}</td>
+            <td style="padding:0.75rem 0.5rem;color:#0f172a;">${e.submitRate}%</td>
+            <td style="padding:0.75rem 0.5rem;font-weight:800;color:#6366f1;">${e.score}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
   loadStudents();
 </script>
 </body>
