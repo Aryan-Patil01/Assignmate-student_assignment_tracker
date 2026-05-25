@@ -1,87 +1,96 @@
-const express = require('express');
-const router = express.Router();
+const express    = require('express');
+const router     = express.Router();
 const Submission = require('../models/Submission');
 const Assignment = require('../models/Assignment');
-const auth = require('../middleware/auth');
-const upload = require('../upload');
-const path = require('path');
+const auth       = require('../middleware/auth');
+const upload     = require('../upload');
+const path       = require('path');
+const fs         = require('fs');
 
-// Student submits assignment with optional file
+// ── SUBMIT assignment (student)
 router.put('/submit/:assignmentId', auth, upload.single('file'), async (req, res) => {
   try {
     const { submittedText } = req.body;
     const assignment = await Assignment.findById(req.params.assignmentId);
-    const now = new Date();
-    const status = now > assignment.deadline ? 'late' : 'submitted';
+    if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
 
-    const updateData = {
-      submittedText,
-      status,
-      submittedAt: now
-    };
+    const now    = new Date();
+    const status = now > assignment.deadline ? 'late' : 'submitted';
+    const update = { submittedText, status, submittedAt: now };
 
     if (req.file) {
-      updateData.fileUrl = req.file.filename;
-      updateData.fileName = req.file.originalname;
+      update.fileUrl  = req.file.filename;
+      update.fileName = req.file.originalname;
     }
 
     const sub = await Submission.findOneAndUpdate(
       { assignmentId: req.params.assignmentId, studentId: req.user.id },
-      updateData,
-      { new: true }
+      update,
+      { new: true, upsert: true }
     );
-    res.json({ message: 'Submitted successfully', submission: sub });
+    res.json({
+      message: status === 'late' ? 'Submitted (late)' : 'Submitted successfully',
+      submission: sub
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Get submissions for a student
+// ── GET my submissions (student)
 router.get('/my', auth, async (req, res) => {
   try {
     const subs = await Submission.find({ studentId: req.user.id })
-      .populate('assignmentId', 'title subject deadline description');
+      .populate('assignmentId', 'title subject deadline description priority');
     res.json(subs);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Teacher/mentor get all submissions for an assignment
+// ── GET all submissions for an assignment (teacher/mentor)
 router.get('/assignment/:assignmentId', auth, async (req, res) => {
   try {
     const subs = await Submission.find({ assignmentId: req.params.assignmentId })
-      .populate('studentId', 'name email');
+      .populate('studentId', 'name email usn class division parentPhone');
     res.json(subs);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Mentor gives feedback and grade
-router.put('/feedback/:submissionId', auth, async (req, res) => {
+// ── EVALUATE submission — marks + feedback (teacher/mentor)
+router.put('/evaluate/:submissionId', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'mentor' && req.user.role !== 'teacher') {
+    if (!['mentor','teacher','admin'].includes(req.user.role))
       return res.status(403).json({ message: 'Forbidden' });
-    }
-    const { grade, feedback } = req.body;
+
+    const { marks, maxMarks, feedback } = req.body;
     const sub = await Submission.findByIdAndUpdate(
       req.params.submissionId,
-      { grade, feedback },
+      { marks, maxMarks: maxMarks || 100, feedback, status: 'evaluated' },
       { new: true }
     );
-    res.json({ message: 'Feedback saved', submission: sub });
+    res.json({ message: 'Evaluation saved', submission: sub });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Download submitted file
+// ── PREVIEW file in browser
 router.get('/file/:filename', auth, (req, res) => {
   const filePath = path.join(__dirname, '..', 'uploads', req.params.filename);
-  res.download(filePath, (err) => {
-    if (err) res.status(404).json({ message: 'File not found' });
-  });
+  if (!fs.existsSync(filePath))
+    return res.status(404).json({ message: 'File not found' });
+  res.sendFile(filePath);
+});
+
+// ── DOWNLOAD file as attachment
+router.get('/download/:filename', auth, (req, res) => {
+  const filePath = path.join(__dirname, '..', 'uploads', req.params.filename);
+  if (!fs.existsSync(filePath))
+    return res.status(404).json({ message: 'File not found' });
+  res.download(filePath);
 });
 
 module.exports = router;
