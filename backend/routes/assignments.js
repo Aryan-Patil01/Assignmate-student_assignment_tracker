@@ -48,7 +48,7 @@ router.get('/', auth, async (req, res) => {
         .sort({ createdAt: -1 });
     } else if (req.user.role === 'student') {
       assignments = await Assignment.find({ assignedTo: req.user.id })
-        .populate('createdBy', 'name')
+        .populate('createdBy', 'name phone')
         .sort({ deadline: 1 });
     } else {
       assignments = await Assignment.find()

@@ -218,6 +218,9 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
     <div class="nav-item" onclick="showSection('leaderboard',this)">
       <span class="nav-icon">🏆</span> Leaderboard
     </div>
+    <div class="nav-item" onclick="showSection('announcements',this)">
+      <span class="nav-icon">📢</span> Announcements
+    </div>
     <div class="sidebar-bottom">
       <div class="user-card">
         <div class="user-av" id="user-av">T</div>
@@ -301,9 +304,10 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
           <option value="">— Choose an assignment —</option>
         </select>
       </div>
+      <div style="margin-bottom:1rem;">
+        <button onclick="exportCSV()" style="padding:0.5rem 1.1rem;border:1.5px solid #10b981;border-radius:10px;background:#f0fdf4;color:#065f46;font-size:0.82rem;font-weight:600;cursor:pointer;">⬇ Export CSV</button>
+      </div>
       <div id="submissions-list"></div>
-    </div>
-<div id="submissions-list"></div>
     </div>
 
     <!-- Analytics -->
@@ -331,6 +335,34 @@ textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
         <div class="page-sub">Top students ranked by score (60% marks + 40% submission rate)</div>
       </div>
       <div id="leaderboard-list"></div>
+    </div>
+
+    <!-- Announcements -->
+    <div class="section" id="announcements">
+      <div class="page-header">
+        <div class="page-title">Announcements</div>
+        <div class="page-sub">Post notices to students or mentors</div>
+      </div>
+      <div class="form-card">
+        <div class="form-group">
+          <div class="form-label">Title</div>
+          <input type="text" id="ann-title" placeholder="e.g. Assignment deadline extended">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Message</div>
+          <textarea id="ann-msg" placeholder="Write your announcement..." style="width:100%;padding:0.6rem 0.85rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.875rem;min-height:90px;resize:vertical;font-family:inherit;"></textarea>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Target audience</div>
+          <select id="ann-target" style="width:100%;padding:0.6rem 0.85rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.875rem;">
+            <option value="all">Everyone</option>
+            <option value="student">Students only</option>
+            <option value="mentor">Mentors only</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="postAnnouncement()">Post Announcement →</button>
+      </div>
+      <div id="ann-list" style="margin-top:1.5rem;"></div>
     </div>
 
   </div>
@@ -553,6 +585,70 @@ let pieChart, barChart;
         </tbody>
       </table>`;
   }
+  // ── Announcements ────────────────────────────────────────────
+  if (document.getElementById('announcements')) {
+    // wire showSection to load announcements
+    const _origShow = showSection;
+    showSection = function(sec, el) {
+      _origShow(sec, el);
+      if (sec === 'announcements') loadAnnouncements();
+    };
+  }
+
+  async function postAnnouncement() {
+    const title = document.getElementById('ann-title').value.trim();
+    const message = document.getElementById('ann-msg').value.trim();
+    const targetRole = document.getElementById('ann-target').value;
+    if (!title || !message) return alert('Please fill in both title and message.');
+    const res = await fetch(`${API}/announcements`, {
+      method: 'POST', headers, body: JSON.stringify({title, message, targetRole})
+    });
+    if (res.ok) {
+      document.getElementById('ann-title').value = '';
+      document.getElementById('ann-msg').value = '';
+      toast('Announcement posted!');
+      loadAnnouncements();
+    } else {
+      toast('Failed to post announcement.', 'error');
+    }
+  }
+
+  async function loadAnnouncements() {
+    const res = await fetch(`${API}/announcements`, {headers});
+    const data = await res.json();
+    const el = document.getElementById('ann-list');
+    if (!data.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No announcements yet</div></div>'; return; }
+    el.innerHTML = data.map(a => `
+      <div style="background:${a.pinned?'#fffbeb':'#fafafa'};border:1.5px solid ${a.pinned?'#fde68a':'#f1f5f9'};border-radius:14px;padding:1.2rem;margin-bottom:0.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+          <div>
+            ${a.pinned?'<span style="font-size:0.72rem;background:#fef9c3;color:#92400e;padding:0.15rem 0.5rem;border-radius:20px;margin-right:0.4rem;">📌 Pinned</span>':''}
+            <span style="font-size:0.925rem;font-weight:700;color:#0f172a;">${a.title}</span>
+          </div>
+          <span style="font-size:0.72rem;color:#94a3b8;white-space:nowrap;">${new Date(a.createdAt).toLocaleDateString('en-IN')}</span>
+        </div>
+        <div style="font-size:0.85rem;color:#475569;margin:0.5rem 0 0.4rem;">${a.message}</div>
+        <div style="font-size:0.72rem;color:#94a3b8;">Posted by ${a.postedBy?.name||'Unknown'} · To: ${a.targetRole}</div>
+      </div>`).join('');
+  }
+function exportCSV() {
+    const id = document.getElementById('sub-select').value;
+    if (!id) return alert('Please select an assignment first.');
+    fetch(`${API}/submissions/export?assignmentId=${id}`, { headers })
+      .then(r => {
+        if (!r.ok) { toast('Export failed. Select an assignment first.', 'error'); throw new Error(); }
+        return r.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'submissions.csv'; a.click();
+        URL.revokeObjectURL(url);
+        toast('CSV downloaded!');
+      })
+      .catch(() => {});
+  }
+
   loadStudents();
 </script>
 </body>

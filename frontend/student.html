@@ -227,6 +227,9 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
 <div class="nav-item" onclick="showSection('calendar',this)">
       <span class="nav-icon">📅</span> Calendar
     </div>
+     <div class="nav-item" onclick="showSection('notices',this)">
+      <span class="nav-icon">📢</span> Notices
+    </div>
     <div class="sidebar-bottom">
       <!-- WhatsApp Alert Toggle -->
       <div class="wa-toggle-wrap">
@@ -333,6 +336,15 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
         🟣 Pending &nbsp; 🟡 Urgent (≤3 days) &nbsp; 🔴 Overdue &nbsp; 🟢 Submitted
       </div>
     </div>
+
+    <!-- Notices / Announcements -->
+    <div class="section" id="notices">
+      <div class="page-header">
+        <div class="page-title">Notices</div>
+        <div class="page-sub">Announcements from your teachers and admin</div>
+      </div>
+      <div id="notices-list"></div>
+    </div>
   </div>
 </div>
 
@@ -405,7 +417,8 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
     if (sec==='dashboard') loadDashboard();
     if (sec==='assignments') loadAssignments();
     if (sec==='submitted') loadSubmitted();
-    if (sec==='calendar') renderCalendar();
+  if (sec==='calendar') renderCalendar();
+  if (sec==='notices') loadNotices();
   }
 
   function dlInfo(deadline) {
@@ -426,7 +439,10 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
     const msg = encodeURIComponent(
       `🚨 SATS Alert!\nAssignment: ${assignment.title}\nSubject: ${assignment.subject}\nStatus: ${status.toUpperCase()}\nDeadline: ${new Date(assignment.deadline).toLocaleString()}\n\nPlease submit ASAP!`
     );
-    return `https://wa.me/?text=${msg}`;
+    const phone = assignment.createdBy?.phone || '';
+    return phone
+      ? `https://wa.me/91${phone}?text=${msg}`
+      : `https://wa.me/?text=${msg}`;
   }
 
   async function loadDashboard() {
@@ -596,6 +612,20 @@ let calYear = new Date().getFullYear();
     if (calMonth < 0)  { calMonth=11; calYear--; }
     renderCalendar();
   }
+  async function loadNotices() {
+    const res = await fetch(`${API}/announcements`, {headers});
+    const data = await res.json();
+    const el = document.getElementById('notices-list');
+    if (!data.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No notices yet</div></div>'; return; }
+    el.innerHTML = data.map(a => `
+      <div style="background:${a.pinned?'#fffbeb':'#fafafa'};border:1.5px solid ${a.pinned?'#fde68a':'#f1f5f9'};border-radius:14px;padding:1.2rem;margin-bottom:0.75rem;">
+        ${a.pinned?'<div style="font-size:0.72rem;color:#92400e;margin-bottom:0.4rem;">📌 Pinned notice</div>':''}
+        <div style="font-size:0.925rem;font-weight:700;color:#0f172a;margin-bottom:0.35rem;">${a.title}</div>
+        <div style="font-size:0.85rem;color:#475569;margin-bottom:0.5rem;">${a.message}</div>
+        <div style="font-size:0.72rem;color:#94a3b8;">From ${a.postedBy?.name||'Unknown'} · ${new Date(a.createdAt).toLocaleDateString('en-IN')}</div>
+      </div>`).join('');
+  }
+
   loadDashboard();
 </script>
 </body>

@@ -216,6 +216,9 @@ select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1)
     <div class="nav-item" onclick="showSection('assign',this)">
       <span class="nav-icon">🔗</span> Assign Mentor
     </div>
+    <div class="nav-item" onclick="showSection('announcements',this)">
+      <span class="nav-icon">📢</span> Announcements
+    </div>
 
     <div class="sidebar-bottom">
       <div class="user-card">
@@ -305,8 +308,42 @@ select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1)
           </div>
           <button class="btn-primary" onclick="assignMentor()">Assign →</button>
         </div>
-        <div class="assign-msg" id="assign-msg">✅ Mentor assigned successfully!</div>
+<div class="assign-msg" id="assign-msg">✅ Mentor assigned successfully!</div>
       </div>
+    </div>
+
+    <!-- Announcements -->
+    <div class="section" id="announcements">
+      <div class="page-header">
+        <div class="page-title">Announcements</div>
+        <div class="page-sub">Post and manage platform-wide notices</div>
+      </div>
+      <div class="form-card">
+        <div class="form-group">
+          <div class="form-label">Title</div>
+          <input type="text" id="ann-title" placeholder="e.g. System maintenance tonight">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Message</div>
+          <textarea id="ann-msg" placeholder="Write your announcement..." style="width:100%;padding:0.6rem 0.85rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.875rem;min-height:90px;resize:vertical;font-family:inherit;"></textarea>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Target audience</div>
+          <select id="ann-target" style="width:100%;padding:0.6rem 0.85rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.875rem;">
+            <option value="all">Everyone</option>
+            <option value="student">Students only</option>
+            <option value="teacher">Teachers only</option>
+            <option value="mentor">Mentors only</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:0.75rem;align-items:center;">
+          <button class="btn-primary" onclick="postAnnouncement()">Post Announcement →</button>
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;color:#475569;cursor:pointer;">
+            <input type="checkbox" id="ann-pin"> Pin this announcement
+          </label>
+        </div>
+      </div>
+      <div id="ann-list" style="margin-top:1.5rem;"></div>
     </div>
 
   </div>
@@ -463,6 +500,66 @@ document.getElementById('greeting') &&
     const msg = document.getElementById('assign-msg');
     msg.classList.add('show');
     setTimeout(()=>msg.classList.remove('show'), 3000);
+  }
+
+  // ── Announcements ────────────────────────────────────────────
+  const _origShow = showSection;
+  showSection = function(sec, el) {
+    _origShow(sec, el);
+    if (sec === 'announcements') loadAnnouncements();
+  };
+
+  async function postAnnouncement() {
+    const title = document.getElementById('ann-title').value.trim();
+    const message = document.getElementById('ann-msg').value.trim();
+    const targetRole = document.getElementById('ann-target').value;
+    const pinned = document.getElementById('ann-pin').checked;
+    if (!title || !message) return alert('Please fill in both title and message.');
+    const res = await fetch(`${API}/announcements`, {
+      method: 'POST', headers, body: JSON.stringify({title, message, targetRole, pinned})
+    });
+    if (res.ok) {
+      document.getElementById('ann-title').value = '';
+      document.getElementById('ann-msg').value = '';
+      document.getElementById('ann-pin').checked = false;
+      toast('Announcement posted!');
+      loadAnnouncements();
+    } else {
+      toast('Failed to post.', 'error');
+    }
+  }
+
+  async function deleteAnnouncement(id) {
+    if (!confirm('Delete this announcement?')) return;
+    const res = await fetch(`${API}/announcements/${id}`, {method:'DELETE', headers});
+    if (res.ok) { toast('Deleted!'); loadAnnouncements(); }
+  }
+
+  async function togglePin(id, currentlyPinned) {
+    await fetch(`${API}/announcements/pin/${id}`, {method:'PUT', headers, body: JSON.stringify({pinned: !currentlyPinned})});
+    loadAnnouncements();
+  }
+
+  async function loadAnnouncements() {
+    const res = await fetch(`${API}/announcements`, {headers});
+    const data = await res.json();
+    const el = document.getElementById('ann-list');
+    if (!data.length) { el.innerHTML='<div class="empty-state">No announcements yet</div>'; return; }
+    el.innerHTML = data.map(a => `
+      <div style="background:${a.pinned?'#fffbeb':'#fafafa'};border:1.5px solid ${a.pinned?'#fde68a':'#f1f5f9'};border-radius:14px;padding:1.2rem;margin-bottom:0.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+          <div>
+            ${a.pinned?'<span style="font-size:0.72rem;background:#fef9c3;color:#92400e;padding:0.15rem 0.5rem;border-radius:20px;margin-right:0.4rem;">📌 Pinned</span>':''}
+            <span style="font-size:0.925rem;font-weight:700;color:#0f172a;">${a.title}</span>
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            <button onclick="togglePin('${a._id}',${a.pinned})" style="font-size:0.72rem;padding:0.2rem 0.6rem;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;background:white;">${a.pinned?'Unpin':'📌 Pin'}</button>
+            <button onclick="deleteAnnouncement('${a._id}')" style="font-size:0.72rem;padding:0.2rem 0.6rem;border:1.5px solid #fee2e2;border-radius:8px;cursor:pointer;background:#fff5f5;color:#dc2626;">Delete</button>
+          </div>
+        </div>
+        <div style="font-size:0.85rem;color:#475569;margin:0.5rem 0 0.4rem;">${a.message}</div>
+        <div style="font-size:0.72rem;color:#94a3b8;">By ${a.postedBy?.name||'Unknown'} · To: ${a.targetRole} · ${new Date(a.createdAt).toLocaleDateString('en-IN')}</div>
+      </div>`).join('');
   }
 
   loadPending(); loadStats();
