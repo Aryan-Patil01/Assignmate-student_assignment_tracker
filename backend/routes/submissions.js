@@ -6,6 +6,7 @@ const auth       = require('../middleware/auth');
 const upload     = require('../upload');
 const path       = require('path');
 const fs         = require('fs');
+const { Parser } = require('json2csv');
 
 // ── SUBMIT assignment (student)
 router.put('/submit/:assignmentId', auth, upload.single('file'), async (req, res) => {
@@ -91,6 +92,36 @@ router.get('/download/:filename', auth, (req, res) => {
   if (!fs.existsSync(filePath))
     return res.status(404).json({ message: 'File not found' });
   res.download(filePath);
+});
+
+// ── EXPORT submissions as CSV (teacher/mentor/admin)
+router.get('/export', auth, async (req, res) => {
+  try {
+    if (!['teacher','mentor','admin'].includes(req.user.role))
+      return res.status(403).json({ message: 'Forbidden' });
+    const { assignmentId } = req.query;
+    if (!assignmentId) return res.status(400).json({ message: 'assignmentId required' });
+    const subs = await Submission.find({ assignmentId })
+      .populate('studentId', 'name email usn class division');
+    const rows = subs.map(s => ({
+      Name:        s.studentId?.name        || '',
+      Email:       s.studentId?.email       || '',
+      USN:         s.studentId?.usn         || '',
+      Class:       s.studentId?.class       || '',
+      Division:    s.studentId?.division    || '',
+      Status:      s.status,
+      Marks:       s.marks ?? '',
+      MaxMarks:    s.maxMarks,
+      Feedback:    s.feedback               || '',
+      SubmittedAt: s.submittedAt ? new Date(s.submittedAt).toLocaleString('en-IN') : ''
+    }));
+    const csv = new Parser().parse(rows);
+    res.header('Content-Type', 'text/csv');
+    res.attachment('submissions.csv');
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 module.exports = router;

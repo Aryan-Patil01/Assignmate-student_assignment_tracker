@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SATS — Mentor Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -137,7 +138,12 @@ input[type="text"]::placeholder { color: #c0c9d8; }
     <div class="nav-item" onclick="showSection('feedback',this)">
       <span class="nav-icon">📝</span> Give Feedback
     </div>
-
+<div class="nav-item" onclick="showSection('leaderboard',this)">
+      <span class="nav-icon">🏆</span> Leaderboard
+    </div>
+    <div class="nav-item" onclick="showSection('notices',this)">
+      <span class="nav-icon">📢</span> Notices
+    </div>
     <div class="sidebar-bottom">
       <div class="user-card">
         <div class="user-av" id="user-av">M</div>
@@ -180,12 +186,28 @@ input[type="text"]::placeholder { color: #c0c9d8; }
       </div>
       <div id="feedback-list"></div>
     </div>
+<!-- Leaderboard -->
+    <div class="section" id="leaderboard">
+      <div class="page-header">
+        <div class="page-title">Leaderboard</div>
+        <div class="page-sub">Your students ranked by performance</div>
+      </div>
+      <div id="lb-list"></div>
+    </div>
 
+    <!-- Notices / Announcements -->
+    <div class="section" id="notices">
+      <div class="page-header">
+        <div class="page-title">Notices</div>
+        <div class="page-sub">Announcements from admin and teachers</div>
+      </div>
+      <div id="notices-list"></div>
+    </div>
   </div>
 </div>
 
 <script>
-  const API = 'http://localhost:5000/api';
+  const API = 'https://assignmate-student-assignment-tracker.onrender.com/api';
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
   const name = localStorage.getItem('name');
@@ -239,6 +261,8 @@ document.getElementById('greeting') &&
     el.classList.add('active');
     if (sec==='students') loadStudents();
     if (sec==='feedback') loadAssignmentSelect();
+    if (sec==='leaderboard') loadLeaderboard();
+    if (sec==='notices') loadNotices();
   }
 
   async function loadStudents() {
@@ -279,7 +303,7 @@ document.getElementById('greeting') &&
         ${s.fileUrl?`<a class="sub-file-link" href="${API.replace('/api','')}/uploads/${s.fileUrl}" target="_blank">📎 ${s.fileName||'Download'}</a><br>`:''}
         ${s.status!=='pending'?`
           <div class="grade-row">
-            <div><div class="form-label">Grade</div><input type="text" id="grade-${s._id}" value="${s.grade||''}" placeholder="A, B+, 85..."></div>
+            <div><div class="form-label">Marks</div><input type="number" id="grade-${s._id}" value="${s.marks||''}" placeholder="0–100"></div>
             <div><div class="form-label">Feedback</div><input type="text" id="fb-${s._id}" value="${s.feedback||''}" placeholder="Great work on..."></div>
           </div>
           <div class="save-row">
@@ -289,12 +313,54 @@ document.getElementById('greeting') &&
       </div>`).join('');
   }
 
-  async function saveFeedback(subId) {
+async function saveFeedback(subId) {
     const grade = document.getElementById(`grade-${subId}`).value;
     const feedback = document.getElementById(`fb-${subId}`).value;
-    await fetch(`${API}/submissions/feedback/${subId}`, {method:'PUT',headers,body:JSON.stringify({grade,feedback})});
-    document.getElementById(`msg-${subId}`).textContent='✅ Saved!';
-    toast('Feedback saved!');
+    const res = await fetch(`${API}/submissions/evaluate/${subId}`, {method:'PUT',headers,body:JSON.stringify({marks: parseFloat(grade)||null, maxMarks:100, feedback})});
+    if (res.ok) {
+      document.getElementById(`msg-${subId}`).textContent='✅ Saved!';
+      toast('Feedback saved!');
+    } else {
+      toast('Failed to save. Try again.');
+    }
+  }
+async function loadLeaderboard() {
+    const res = await fetch(`${API}/leaderboard`, {headers});
+    const data = await res.json();
+    const el = document.getElementById('lb-list');
+    if (!data.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-title">No data yet</div></div>'; return; }
+    el.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
+        <thead><tr style="text-align:left;border-bottom:2px solid #f1f5f9;">
+          <th style="padding:0.75rem 0.5rem;color:#475569;font-size:0.72rem;text-transform:uppercase;">Rank</th>
+          <th style="padding:0.75rem 0.5rem;color:#475569;font-size:0.72rem;text-transform:uppercase;">Student</th>
+          <th style="padding:0.75rem 0.5rem;color:#475569;font-size:0.72rem;text-transform:uppercase;">Avg Marks</th>
+          <th style="padding:0.75rem 0.5rem;color:#475569;font-size:0.72rem;text-transform:uppercase;">Submit Rate</th>
+          <th style="padding:0.75rem 0.5rem;color:#475569;font-size:0.72rem;text-transform:uppercase;">Score</th>
+        </tr></thead>
+        <tbody>${data.map(e=>`
+          <tr style="border-bottom:1px solid #f8fafc;">
+            <td style="padding:0.75rem 0.5rem;font-weight:800;color:${e.rank<=3?'#f59e0b':'#94a3b8'};">${e.rank<=3?['🥇','🥈','🥉'][e.rank-1]:e.rank}</td>
+            <td style="padding:0.75rem 0.5rem;font-weight:700;color:#0f172a;">${e.student.name}</td>
+            <td style="padding:0.75rem 0.5rem;">${e.avgMarks}</td>
+            <td style="padding:0.75rem 0.5rem;">${e.submitRate}%</td>
+            <td style="padding:0.75rem 0.5rem;font-weight:800;color:#f59e0b;">${e.score}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+  async function loadNotices() {
+    const res = await fetch(`${API}/announcements`, {headers});
+    const data = await res.json();
+    const el = document.getElementById('notices-list');
+    if (!data.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No notices yet</div></div>'; return; }
+    el.innerHTML = data.map(a => `
+      <div style="background:${a.pinned?'#fffbeb':'#fafafa'};border:1.5px solid ${a.pinned?'#fde68a':'#f1f5f9'};border-radius:14px;padding:1.2rem;margin-bottom:0.75rem;">
+        ${a.pinned?'<div style="font-size:0.72rem;color:#92400e;margin-bottom:0.4rem;">📌 Pinned notice</div>':''}
+        <div style="font-size:0.925rem;font-weight:700;color:#0f172a;margin-bottom:0.35rem;">${a.title}</div>
+        <div style="font-size:0.85rem;color:#475569;margin-bottom:0.5rem;">${a.message}</div>
+        <div style="font-size:0.72rem;color:#94a3b8;">From ${a.postedBy?.name||'Unknown'} · ${new Date(a.createdAt).toLocaleDateString('en-IN')}</div>
+      </div>`).join('');
   }
 
   loadStudents();

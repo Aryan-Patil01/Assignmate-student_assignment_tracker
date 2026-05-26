@@ -224,7 +224,12 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
     <div class="nav-item" onclick="showSection('submitted',this)">
       <span class="nav-icon">✅</span> Submitted
     </div>
-
+<div class="nav-item" onclick="showSection('calendar',this)">
+      <span class="nav-icon">📅</span> Calendar
+    </div>
+     <div class="nav-item" onclick="showSection('notices',this)">
+      <span class="nav-icon">📢</span> Notices
+    </div>
     <div class="sidebar-bottom">
       <!-- WhatsApp Alert Toggle -->
       <div class="wa-toggle-wrap">
@@ -315,12 +320,36 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
         <div class="skeleton" style="height:180px;border-radius:16px;"></div>
       </div>
     </div>
+<!-- Calendar -->
+    <div class="section" id="calendar">
+      <div class="page-header">
+        <div class="page-title">Deadline Calendar</div>
+        <div class="page-sub">All your assignment deadlines at a glance</div>
+      </div>
+      <div id="cal-nav" style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;">
+        <button onclick="changeMonth(-1)" style="padding:0.4rem 0.9rem;border:1.5px solid #e2e8f0;border-radius:9px;background:white;cursor:pointer;font-size:0.875rem;">◀</button>
+        <div id="cal-title" style="font-size:1rem;font-weight:800;color:#0f172a;min-width:160px;text-align:center;"></div>
+        <button onclick="changeMonth(1)" style="padding:0.4rem 0.9rem;border:1.5px solid #e2e8f0;border-radius:9px;background:white;cursor:pointer;font-size:0.875rem;">▶</button>
+      </div>
+      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+      <div id="cal-legend" style="margin-top:1rem;font-size:0.78rem;color:#94a3b8;">
+        🟣 Pending &nbsp; 🟡 Urgent (≤3 days) &nbsp; 🔴 Overdue &nbsp; 🟢 Submitted
+      </div>
+    </div>
 
+    <!-- Notices / Announcements -->
+    <div class="section" id="notices">
+      <div class="page-header">
+        <div class="page-title">Notices</div>
+        <div class="page-sub">Announcements from your teachers and admin</div>
+      </div>
+      <div id="notices-list"></div>
+    </div>
   </div>
 </div>
 
 <script>
-  const API = 'http://localhost:5000/api';
+  const API = 'https://assignmate-student-assignment-tracker.onrender.com/api';
   const token = localStorage.getItem('token');
   const role  = localStorage.getItem('role');
   const name  = localStorage.getItem('name');
@@ -388,6 +417,8 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
     if (sec==='dashboard') loadDashboard();
     if (sec==='assignments') loadAssignments();
     if (sec==='submitted') loadSubmitted();
+  if (sec==='calendar') renderCalendar();
+  if (sec==='notices') loadNotices();
   }
 
   function dlInfo(deadline) {
@@ -408,7 +439,10 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
     const msg = encodeURIComponent(
       `🚨 SATS Alert!\nAssignment: ${assignment.title}\nSubject: ${assignment.subject}\nStatus: ${status.toUpperCase()}\nDeadline: ${new Date(assignment.deadline).toLocaleString()}\n\nPlease submit ASAP!`
     );
-    return `https://wa.me/?text=${msg}`;
+    const phone = assignment.createdBy?.phone || '';
+    return phone
+      ? `https://wa.me/91${phone}?text=${msg}`
+      : `https://wa.me/?text=${msg}`;
   }
 
   async function loadDashboard() {
@@ -518,6 +552,77 @@ textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.
             ${s.grade?`<div class="fb-grade">${s.grade}</div>`:''}
             ${s.feedback?`<div class="fb-text">💬 ${s.feedback}</div>`:''}
           </div>`:`<div class="awaiting-fb">⏳ Awaiting mentor feedback...</div>`}
+      </div>`).join('');
+  }
+let calYear = new Date().getFullYear();
+  let calMonth = new Date().getMonth();
+  let calSubs = [];
+
+  async function renderCalendar() {
+    if (!calSubs.length) {
+      const res = await fetch(`${API}/submissions/my`, {headers});
+      calSubs = await res.json();
+    }
+    const now = new Date();
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+    document.getElementById('cal-title').textContent =
+      new Date(calYear, calMonth).toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+
+    // Build deadline map: day → submission
+    const dlMap = {};
+    calSubs.forEach(s => {
+      const d = new Date(s.assignmentId.deadline);
+      if (d.getFullYear()===calYear && d.getMonth()===calMonth) {
+        dlMap[d.getDate()] = s;
+      }
+    });
+
+    const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    let html = days.map(d=>`<div style="text-align:center;font-size:0.72rem;font-weight:700;color:#94a3b8;padding:0.4rem 0;">${d}</div>`).join('');
+
+    // Empty cells before month start
+    for (let i=0;i<firstDay;i++) html += '<div></div>';
+
+    for (let d=1;d<=daysInMonth;d++) {
+      const sub = dlMap[d];
+      const isToday = d===now.getDate()&&calMonth===now.getMonth()&&calYear===now.getFullYear();
+      let bg='#f8fafc', border='#f1f5f9', color='#475569', dot='';
+      if (sub) {
+        const dl = dlInfo(sub.assignmentId.deadline);
+        if (sub.status!=='pending') { bg='#d1fae5'; border='#a7f3d0'; color='#065f46'; dot='🟢'; }
+        else if (dl.cls==='overdue') { bg='#fee2e2'; border='#fecaca'; color='#991b1b'; dot='🔴'; }
+        else if (dl.cls==='urgent') { bg='#fef3c7'; border='#fde68a'; color='#92400e'; dot='🟡'; }
+        else { bg='#ede9fe'; border='#ddd6fe'; color='#6d28d9'; dot='🟣'; }
+      }
+      html += `<div title="${sub?sub.assignmentId.title:''}" style="
+        text-align:center;padding:0.5rem 0.25rem;border-radius:9px;
+        background:${bg};border:1.5px solid ${border};color:${color};
+        font-size:0.8rem;font-weight:${sub?800:400};cursor:${sub?'pointer':'default'};
+        ${isToday?'outline:2px solid #6366f1;outline-offset:1px;':''}"
+        ${sub?`onclick="showSection('assignments',document.querySelector('.nav-item:nth-child(2)'))"`:''}
+      >${d}${dot?`<br><span style="font-size:0.6rem;">${dot}</span>`:''}</div>`;
+    }
+    document.getElementById('cal-grid').innerHTML = html;
+  }
+
+  function changeMonth(dir) {
+    calMonth += dir;
+    if (calMonth > 11) { calMonth=0; calYear++; }
+    if (calMonth < 0)  { calMonth=11; calYear--; }
+    renderCalendar();
+  }
+  async function loadNotices() {
+    const res = await fetch(`${API}/announcements`, {headers});
+    const data = await res.json();
+    const el = document.getElementById('notices-list');
+    if (!data.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">No notices yet</div></div>'; return; }
+    el.innerHTML = data.map(a => `
+      <div style="background:${a.pinned?'#fffbeb':'#fafafa'};border:1.5px solid ${a.pinned?'#fde68a':'#f1f5f9'};border-radius:14px;padding:1.2rem;margin-bottom:0.75rem;">
+        ${a.pinned?'<div style="font-size:0.72rem;color:#92400e;margin-bottom:0.4rem;">📌 Pinned notice</div>':''}
+        <div style="font-size:0.925rem;font-weight:700;color:#0f172a;margin-bottom:0.35rem;">${a.title}</div>
+        <div style="font-size:0.85rem;color:#475569;margin-bottom:0.5rem;">${a.message}</div>
+        <div style="font-size:0.72rem;color:#94a3b8;">From ${a.postedBy?.name||'Unknown'} · ${new Date(a.createdAt).toLocaleDateString('en-IN')}</div>
       </div>`).join('');
   }
 
