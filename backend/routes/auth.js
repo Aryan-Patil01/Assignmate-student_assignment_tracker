@@ -4,6 +4,8 @@ const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const User    = require('../models/User');
 const auth    = require('../middleware/auth');
+const { sendLoginNotification } = require('../helpers/notifications');
+const { sendRegistrationEmail } = require('../services/emailService');
 
 // Register
 router.post('/register', async (req, res) => {
@@ -14,6 +16,13 @@ router.post('/register', async (req, res) => {
 
     if (!name || !email || !password || !role)
       return res.status(400).json({ message: 'Name, email, password and role are required' });
+
+    if (phone) {
+      const digits = String(phone).replace(/\D/g, '');
+      const normalized = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+      if (!/^[0-9]{10}$/.test(normalized))
+        return res.status(400).json({ message: 'Phone must be a valid 10-digit Indian mobile number' });
+    }
 
     const existing = await User.findOne({ email });
     if (existing)
@@ -31,6 +40,7 @@ router.post('/register', async (req, res) => {
       parentPhone: parentPhone || '',
     });
     await user.save();
+    sendRegistrationEmail(user);
     res.json({ message: 'Registered successfully. Wait for admin approval.' });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -56,6 +66,9 @@ router.post('/login', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    sendLoginNotification(user);
+
     res.json({
       token,
       role:     user.role,

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { sendApprovalEmail } = require('../services/emailService');
 
 // Get all pending users
 router.get('/pending', auth, async (req, res) => {
@@ -18,7 +19,8 @@ router.get('/pending', auth, async (req, res) => {
 router.put('/approve/:id', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
-    await User.findByIdAndUpdate(req.params.id, { approved: true });
+    const user = await User.findByIdAndUpdate(req.params.id, { approved: true }, { new: true });
+    sendApprovalEmail(user);
     res.json({ message: 'User approved' });
   } catch (err) {
     res.status(500).json({ message: err.message });

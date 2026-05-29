@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const connectDB = require('./db');
+const startReminderCron = require('./cron/reminderCron');
 
 const app = express();
 
@@ -50,6 +51,8 @@ app.use((err, req, res, next) => {
 
 // Start Server
 const PORT = process.env.PORT || 5000;
+
+startReminderCron();
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

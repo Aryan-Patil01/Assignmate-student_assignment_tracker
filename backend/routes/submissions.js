@@ -4,6 +4,7 @@ const Submission = require('../models/Submission');
 const Assignment = require('../models/Assignment');
 const auth       = require('../middleware/auth');
 const upload     = require('../upload');
+const { sendMarksPublishedEmail } = require('../services/emailService');
 const path       = require('path');
 const fs         = require('fs');
 const { Parser } = require('json2csv');
@@ -71,7 +72,12 @@ router.put('/evaluate/:submissionId', auth, async (req, res) => {
       req.params.submissionId,
       { marks, maxMarks: maxMarks || 100, feedback, status: 'evaluated' },
       { new: true }
-    );
+    ).populate('studentId', 'name email').populate('assignmentId', 'title');
+
+    if (sub && sub.studentId && sub.studentId.email) {
+      sendMarksPublishedEmail(sub.studentId, sub.assignmentId, sub);
+    }
+
     res.json({ message: 'Evaluation saved', submission: sub });
   } catch (err) {
     res.status(500).json({ message: err.message });

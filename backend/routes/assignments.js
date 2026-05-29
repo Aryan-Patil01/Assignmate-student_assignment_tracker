@@ -4,6 +4,7 @@ const Assignment = require('../models/Assignment');
 const Submission = require('../models/Submission');
 const User       = require('../models/User');
 const auth       = require('../middleware/auth');
+const { sendAssignmentEmail } = require('../services/emailService');
 
 // ── CREATE assignment (teacher + mentor)
 router.post('/', auth, async (req, res) => {
@@ -32,6 +33,11 @@ router.post('/', auth, async (req, res) => {
       if (!exists)
         await new Submission({ assignmentId: assignment._id, studentId, status: 'pending' }).save();
     }
+    const assignedStudents = await User.find({ _id: { $in: assignedTo } }).select('name email');
+    Promise.allSettled(
+      assignedStudents.map(s => sendAssignmentEmail(s, assignment))
+    );
+
     res.json({ message: 'Assignment created', assignment });
   } catch (err) {
     res.status(500).json({ message: err.message });

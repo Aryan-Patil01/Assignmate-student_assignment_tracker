@@ -10,8 +10,32 @@ const userSchema = new mongoose.Schema({
   class:       { type: String, default: '' },
   division:    { type: String, default: '' },
   subject:     { type: String, default: '' },
-  phone:       { type: String, default: '' },
-  parentPhone: { type: String, default: '' },
+  phone: {
+    type: String,
+    default: '',
+    validate: {
+      validator: function (v) {
+        if (!v) return true;
+        const digits = v.replace(/\D/g, '');
+        const normalized = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+        return /^[0-9]{10}$/.test(normalized);
+      },
+      message: 'Phone must be a valid 10-digit Indian mobile number',
+    },
+  },
+  parentPhone: {
+    type: String,
+    default: '',
+    validate: {
+      validator: function (v) {
+        if (!v) return true;
+        const digits = v.replace(/\D/g, '');
+        const normalized = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+        return /^[0-9]{10}$/.test(normalized);
+      },
+      message: 'Parent phone must be a valid 10-digit Indian mobile number',
+    },
+  },
   isMentor:    { type: Boolean, default: false },
   mentorId:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   flagged:     { type: Boolean, default: false },

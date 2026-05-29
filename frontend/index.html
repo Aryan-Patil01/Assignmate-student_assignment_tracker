@@ -1030,7 +1030,7 @@
     button.textContent = 'Signing in...';
 
     try {
-        const res = await fetch("https://assignmate-student-assignment-tracker.onrender.com/api/auth/login", {
+        const res = await fetch("http://localhost:5000/api/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -1077,6 +1077,7 @@
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const registerRole = document.getElementById('registerRole').value;
+            const registerPhone = document.getElementById('registerPhone').value;
 
             if (password !== confirmPassword) {
                 alert('Passwords do not match!');
@@ -1088,6 +1089,15 @@
                 return;
             }
 
+            if (registerPhone) {
+                const digits = registerPhone.replace(/\D/g, '');
+                const normalized = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+                if (!/^[0-9]{10}$/.test(normalized)) {
+                    alert('Phone must be a valid 10-digit Indian mobile number');
+                    return;
+                }
+            }
+
             const name = firstName + " " + lastName;
             
             // Add loading state
@@ -1096,7 +1106,7 @@
             button.textContent = 'Creating account...';
 
             try {
-                const res = await fetch("https://assignmate-student-assignment-tracker.onrender.com/api/auth/register", {
+                const res = await fetch("http://localhost:5000/api/auth/register", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"

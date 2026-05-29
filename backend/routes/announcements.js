@@ -1,7 +1,10 @@
 const express      = require('express');
 const router       = express.Router();
 const Announcement = require('../models/Announcement');
+const User         = require('../models/User');
 const auth         = require('../middleware/auth');
+const { sendAnnouncementNotification } = require('../helpers/notifications');
+const { sendAnnouncementEmail } = require('../services/emailService');
 
 // Create announcement (teacher, mentor, admin)
 router.post('/', auth, async (req, res) => {
@@ -17,6 +20,18 @@ router.post('/', auth, async (req, res) => {
       pinned:     pinned || false
     });
     await ann.save();
+
+    const filter = { approved: true };
+    if (targetRole && targetRole !== 'all') {
+      filter.role = targetRole;
+    }
+    const students = await User.find(filter).select('phone parentPhone email');
+
+    sendAnnouncementNotification(students, ann);
+    Promise.allSettled(
+      students.map(s => sendAnnouncementEmail(s, ann, req.user.name))
+    );
+
     res.json({ message: 'Announcement posted', announcement: ann });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
