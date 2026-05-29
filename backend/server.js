@@ -11,13 +11,23 @@ const app = express();
 // Connect Database
 connectDB();
 
-// CORS Fix for Netlify + Localhost
+// CORS — allow Netlify frontend + localhost development
+const allowedOrigins = [
+  'https://assignmate-students.netlify.app',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000'
+];
 app.use(cors({
-  origin: '*',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.options('/{*path}', cors());
 
 // Middleware
 app.use(express.json());

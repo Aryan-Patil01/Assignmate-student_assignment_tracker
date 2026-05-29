@@ -49,7 +49,7 @@ async function sendApprovalEmail(user) {
     'Your AssignMate account has been approved by the admin.',
     'You can now log in and start using the platform.',
     '',
-    'Login here: http://localhost:5000',
+    'Login here: https://assignmate-students.netlify.app',
     '',
     'Thank you,',
     'AssignMate Team'
